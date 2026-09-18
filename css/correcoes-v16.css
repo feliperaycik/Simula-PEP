@@ -1,0 +1,126 @@
+/* v16: padrões visuais comuns e correções das telas existentes. */
+[hidden]{display:none!important}
+:root{--portal-radius:10px;--portal-shadow:0 4px 16px #143c5612}
+body{font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5}
+body .main{min-width:0;min-height:100vh;display:flex;flex-direction:column}body .content{width:100%;flex:1;min-width:0}
+body input,body select,body textarea,body button,body .btn{font-family:inherit;font-size:.875rem;line-height:1.45}
+body input[type=search]{min-height:42px;border:1px solid var(--line);background:var(--white);color:var(--ink);border-radius:var(--portal-radius);box-shadow:none;padding:10px 13px}
+body :is(input,select,textarea)::placeholder{color:var(--muted);opacity:1}
+body :is(input,select,textarea):focus-visible,body :is(button,a,[tabindex]):focus-visible{outline:3px solid #268bc7!important;outline-offset:2px}
+body :is(.card,.form-card,.table-wrap,.notify-panel,.account-menu){border-color:var(--line);box-shadow:var(--portal-shadow)}
+body :is(button,.btn):disabled{opacity:.55;cursor:not-allowed}
+body .academic{position:static;margin-top:24px;padding:5px 16px;font-size:.75rem;line-height:1.5;font-weight:400;background:var(--pale);color:var(--ink);border-top:1px solid var(--line)}
+body .portal-search{display:block;margin:12px 0}body .portal-search input{width:100%;font-size:.875rem}
+body .nav-section{font-size:.75rem}body .nav a,body .nav-parent{font-size:.875rem}
+body .record-chevron{font-size:22px;font-style:normal;transition:transform .15s}body .nav-parent.open .record-chevron{transform:rotate(90deg)}
+body .search-results{max-height:320px;overflow:auto;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:4px;box-shadow:var(--portal-shadow)}
+body .search-result,body .nav .search-result{display:block;width:100%;text-align:left;padding:12px;background:transparent;color:var(--ink);font-weight:400;text-decoration:none;border-radius:7px;overflow-wrap:anywhere}
+body .search-result:hover{background:var(--pale);box-shadow:var(--portal-shadow)}body .search-result small{display:block;color:var(--muted);font-size:.75rem;margin-top:3px}
+body .patient-search{margin-bottom:20px}body .patient-search>input{max-width:600px}body .patient-search>small{display:block;font-size:.75rem;margin-top:5px;color:var(--muted)}
+body .agenda-reference{max-width:none}body .agenda-reference h2{font-size:1.75rem;letter-spacing:normal}
+body .agenda-utilities{display:flex!important;position:static!important;width:100%!important;height:auto!important;clip:auto!important;overflow:visible!important;margin:0 0 20px!important;gap:10px;flex-wrap:wrap}
+body .agenda-utilities>input,body .agenda-utilities>select,body .agenda-utilities>button{display:inline-flex!important}body .agenda-utilities>input{flex:1 1 240px;max-width:480px}body .agenda-utilities>select{width:auto;max-width:240px}
+body .agenda-workspace{display:grid;grid-template-columns:230px minmax(0,1fr);align-items:start;gap:20px}
+body .agenda-schedules{min-width:0}body .agenda-calendar{padding:16px;background:var(--white);color:var(--ink)}
+body .agenda-calendar .calendar-head{display:grid;grid-template-columns:30px 1fr 30px;align-items:center;gap:5px;margin-bottom:12px}body .agenda-calendar h3{margin:0;font-size:.875rem;text-align:center;text-transform:capitalize;color:var(--ink)}
+body .agenda-calendar .calendar-head button{padding:0;width:30px;height:32px;font-size:22px}
+body .agenda-calendar .calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+body .agenda-calendar .calendar b{font-size:.75rem;color:var(--muted)}body .agenda-calendar .calendar-day{width:100%;min-height:32px;margin:0;padding:0;background:transparent;color:var(--ink);font-size:.875rem;font-weight:400;border:1px solid transparent;border-radius:6px}
+body .agenda-calendar .calendar-day:hover{background:var(--pale)}body .agenda-calendar .calendar-day.today{border-color:var(--blue)}body .agenda-calendar .calendar-day.selected{background:#005594;color:#fff}
+body .agenda-calendar .calendar-today{width:100%;margin-top:14px;background:var(--pale);color:var(--ink);font-weight:400}
+body .agenda-reference-list,body .agenda-reference-cancelled{overflow:auto!important;background:var(--white)!important;border:1px solid var(--line)!important;box-shadow:var(--portal-shadow)!important}
+body .agenda-reference .agenda-list-header,body .agenda-reference .agenda-row{display:grid!important;grid-template-columns:62px minmax(64px,.6fr) minmax(145px,1.6fr) minmax(120px,1.3fr) minmax(110px,1fr) 158px 82px!important;min-width:865px;column-gap:10px;align-items:center;text-align:left;padding:10px 12px!important}
+body .agenda-reference .agenda-list-header{background:var(--pale)!important;color:var(--muted)!important;font-size:.75rem!important;letter-spacing:0;font-weight:500;border-color:var(--line)!important}
+body .agenda-reference .agenda-row{background:var(--white)!important;color:var(--ink)!important;font-size:.875rem!important;border-color:var(--line)!important;min-height:62px}
+body .agenda-reference .agenda-row:hover{background:var(--pale)!important;box-shadow:inset 0 0 0 1px var(--line)}
+body .agenda-reference .agenda-row>*{min-width:0;justify-self:stretch;grid-row:1!important;overflow-wrap:anywhere;font-family:inherit!important;font-size:.875rem!important;font-weight:400!important;text-align:left}
+body .agenda-reference .agenda-row>:nth-child(1){grid-column:1!important}body .agenda-reference .agenda-row>:nth-child(2){grid-column:2!important}body .agenda-reference .agenda-row>:nth-child(3){display:block!important;grid-column:3!important}body .agenda-reference .agenda-row>:nth-child(4){display:block!important;grid-column:4!important}body .agenda-reference .agenda-row>:nth-child(5){display:flex!important;grid-column:5!important}body .agenda-reference .agenda-row>:nth-child(6){grid-column:6!important}
+body .agenda-reference .time-chip{display:flex!important;align-items:center;justify-content:center;width:60px;height:32px;padding:0!important;border:1px solid var(--line)!important;border-radius:6px;background:var(--pale)!important;box-shadow:0 2px 4px #0002;color:var(--ink)!important;font:inherit!important;font-weight:400!important;text-align:center!important;cursor:default}
+body .agenda-reference :is(.agenda-patient,.agenda-type,.agenda-professional){color:var(--ink)!important;font-weight:400!important;text-decoration:none}
+body .agenda-reference .agenda-status-cell{gap:7px!important}body .agenda-reference .patient-dot{width:12px;height:12px;flex:0 0 12px!important;border:1px solid #0002}
+body .agenda-reference .agenda-status-select,body.dark .agenda-reference .agenda-status-select{color:var(--ink)!important;background:transparent!important;font-weight:400!important;font-size:.875rem!important;width:100%!important;min-width:0!important;appearance:auto;padding:7px 5px!important;border:1px solid var(--line)!important;border-radius:6px;box-shadow:0 2px 4px #0002;cursor:pointer}
+body .agenda-reference .agenda-status-select:focus{background:var(--white)!important;color:var(--ink)!important;outline:2px solid #268bc7!important}
+body .agenda-reference .agenda-open{background:transparent;padding:4px 0;color:var(--blue)!important;justify-content:flex-start;font-weight:400}
+body #cancelledRows>p,body .agenda-empty{margin:0;padding:20px}body .agenda-reference-cancelled h3{color:var(--red);font-size:.875rem}
+body .patient-table table{min-width:850px;table-layout:auto}body .patient-table th:first-child{width:34%;min-width:250px}body .patient-table td:first-child{white-space:normal;overflow-wrap:anywhere}body .patient-table td:nth-child(2){min-width:150px;white-space:nowrap}body .patient-table th:last-child{width:170px}
+body .patient-table td{font-size:.875rem}body .patient-table td small{display:block;color:var(--muted);font-size:.75rem;margin-top:5px}body .patient-table .actions{margin:0;gap:6px}body .patient-row{cursor:pointer}body .patient-row:hover{background:var(--pale);box-shadow:inset 0 0 0 1px var(--line)}
+body .patient-registration-form [name=nome]{min-width:0}body .patient-registration-form .field:has([name=nome]){grid-column:span 2}
+body form[data-k=evolucoes] .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}body form[data-k=evolucoes] .field:has(textarea){grid-column:1/-1}
+body .patient-record-banner .muted{line-height:1.8}body .report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}body .report-patients{display:grid;gap:10px}
+body .notify-panel{position:fixed;max-width:calc(100vw - 24px);padding:14px;right:20px;max-height:calc(100vh - 80px);overflow:auto}
+body .notification-list{max-height:320px;overflow-y:auto;overscroll-behavior:contain;margin:10px 0}body .notification-list .notification{height:80px;padding:10px 8px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center}
+body .notification-list .notification>span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.875rem}body .notification small{display:block;font-size:.75rem;color:var(--muted)}body .notify-panel>button{width:100%}
+body .all-notifications{max-height:65vh;overflow:auto}body .all-notifications .notification{overflow-wrap:anywhere}
+body .password-settings{margin-top:20px}body .accessibility-panel{max-height:65vh;overflow:auto}body .accessibility-panel button{font-size:.875rem;min-height:36px}body .a11y-description{font-size:.75rem}
+/* Paleta escura aplicada também a componentes anteriormente fixados no branco. */
+@media screen{
+ body.dark{--bg:#10212b;--white:#19303d;--ink:#edf5fa;--muted:#b6cbd8;--line:#425e6e;--pale:#244351;--blue:#80cef5;--navy:#edf5fa;--red:#f093a0;--portal-shadow:0 4px 16px #0003;color-scheme:dark}
+ body.dark :is(.sidebar,.topbar,.card,.form-card,.table-wrap,.modal-box,.account-menu,.accessibility-panel,.notify-panel,.patient-context,.patient-record-banner,.clinical-section,.login-card){background:var(--white)!important;color:var(--ink)!important;border-color:var(--line)!important}
+ body.dark :is(h1,h2,h3,h4,.metric,.field,.account-summary strong,.user-name,.brand){color:var(--ink)!important}
+ body.dark :is(.muted,small,.subtitle,.nav-section){color:var(--muted)!important}
+ body.dark :is(input,select,textarea){background:var(--bg)!important;color:var(--ink)!important;border-color:var(--line)!important}
+ body.dark :is(th,.tab,.secondary,.outline,.faq button,.nav a,.nav-parent){background:var(--white)!important;color:var(--ink)!important;border-color:var(--line)!important}
+ body.dark :is(.tab.active,.nav a.active,.nav a:hover,.nav-parent.active,.secondary:hover,.search-result:hover){background:var(--pale)!important;color:var(--ink)!important}
+ body.dark td,body.dark .event{color:var(--ink);border-color:var(--line)}
+ body.dark button:not(.secondary):not(.outline):not(.agenda-patient):not(.agenda-open):not(.calendar-day):not(.theme-toggle):not(.bell):not(.user-trigger):not(.nav-parent):not(.close),body.dark .btn:not(.secondary):not(.outline){background:#005594;color:#fff}
+ body.dark button.danger{background:#aa2940!important;color:#fff!important}
+ body.dark .doc,body.dark .modal-box:has(.doc){background:var(--white)!important;color:var(--ink)!important;color-scheme:dark}
+ body.dark .doc :is(h1,h2,h3,strong,b,p,span,footer,small){color:#edf5fa!important}
+}
+@media(max-width:1050px){body .agenda-workspace{grid-template-columns:1fr}body .agenda-calendar{width:100%;max-width:340px}body .agenda-reference-head{gap:16px}}
+@media(max-width:600px){body .report-metrics,body form[data-k=evolucoes] .form-grid{grid-template-columns:1fr}body .patient-registration-form .field:has([name=nome]){grid-column:auto}body .agenda-utilities>select{max-width:none;flex:1}body .notify-panel{right:12px}body .toolbar input{max-width:none}body .topbar{height:auto;min-height:66px;gap:8px}body .topbar>strong{font-size:.875rem}body .agenda-reference h2{font-size:1.5rem}}
+@media print{body.a11y-scaled{zoom:1!important}body .main{display:block}body .agenda-calendar,body .agenda-utilities,body .patient-search{display:none!important}}
+
+body .content:has(#firebaseAccountForm) .password-settings{display:none}
+
+body .allergy-inline{display:inline-block}body .allergy-card{grid-column:span 2}body .allergy-card span{display:inline!important}@media(max-width:600px){body .allergy-card{grid-column:auto}}
+@media screen{
+ body.dark :is(.app,.main,.content){background:var(--bg)!important;color:var(--ink)!important}
+ body.dark .topbar>strong{color:var(--ink)!important}
+}
+
+/* Correções solicitadas: organização e controles, com as cores existentes. */
+body .agenda-reference .agenda-list-header>span{display:block!important;grid-column:auto!important}
+body .agenda-utilities #searchFilterToggle{position:static;width:36px;height:36px}
+body .agenda-utilities #quickSearch{padding-left:13px;flex:1 1 180px;width:auto}
+body[data-page=dashboard] .page-head{padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+body[data-page=dashboard] .page-head h1{white-space:nowrap;font-size:clamp(.9rem,2vw,1.6rem)}
+body[data-page=dashboard] .page-head .muted{display:none}
+body .agenda-reference-head{padding-bottom:12px!important;margin-bottom:12px!important;min-height:0!important;gap:12px}
+body .icon-button{display:inline-flex!important;align-items:center;justify-content:center;width:36px;min-width:36px;height:36px;padding:7px!important;border:1px solid var(--line)!important;border-radius:7px;background:var(--white);color:var(--blue);text-decoration:none;flex-shrink:0}
+body .icon-button:hover{background:var(--pale);box-shadow:0 2px 6px #0002}
+body .agenda-reference .agenda-row>:nth-child(5){display:block!important}
+body .agenda-reference .agenda-row>:nth-child(6){display:flex!important;grid-column:6!important}
+body .agenda-reference .agenda-row>:nth-child(7){display:flex!important;grid-column:7!important;gap:5px}
+body .agenda-reference .agenda-patient-id{font-size:.75rem!important;font-variant-numeric:tabular-nums}
+body .agenda-calendar .calendar-head .calendar-period{width:100%;height:auto;min-height:32px;font-size:.875rem;padding:4px;background:var(--pale);color:var(--ink);text-transform:capitalize}
+body #agendaSearchFilters{flex-basis:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--white)}
+body .patient-search-toolbar{display:flex;gap:8px;align-items:center;max-width:700px}
+body .patient-search-toolbar input{flex:1;min-width:0}
+body #patientLookupFilters{max-width:700px;margin-top:12px}
+body .patient-table th:first-child{width:auto;min-width:80px}
+body .patient-table th:nth-child(2){width:28%;min-width:190px}
+body .patient-table th:last-child{width:70px}
+body .patient-data-group{border:1px solid var(--line);border-radius:10px;margin:0 0 20px;padding:16px;min-width:0}
+body .patient-data-group legend{padding:0 7px;color:var(--ink);font-weight:600}
+body .patient-avatar svg{width:32px;height:32px}
+body .professional-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;grid-column:1/-1;align-items:start;max-width:760px;width:100%}
+body .professional-pair .field{grid-column:auto!important;margin:0;min-width:0}
+body .professional-field>span{display:flex;align-items:center;gap:6px}
+body.dark .clinical-tabs .tab{background:var(--pale)!important;color:var(--ink)!important;border:1px solid var(--line)}
+body.dark .clinical-tabs .tab.active{background:#005594!important;color:#fff!important}
+body .full-patient-document .print-header{display:flex;align-items:center;gap:20px}
+body .full-patient-document .print-header img{width:130px;height:auto}
+body .doc{--ink:#172f3d;--muted:#536773;--white:#fff;--line:#cbd5dc;--pale:#f2f6f8;--blue:#005594;background:#fff!important;color:#172f3d!important}
+body .professional-pair input{height:42px;width:100%;min-width:0;box-sizing:border-box}
+body form[data-k=solicitacoes_exames] .field:has([name=prioridade]){grid-column:1/-1}
+body form[data-k=planos] .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body form[data-k=planos] .field{grid-column:1/-1}
+body form[data-k=planos] .field:has([name=status]),body form[data-k=planos] .field:has([name=prazo]){grid-column:span 1}
+body .full-patient-data dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0}
+body .full-patient-data section{border-top:1px solid var(--line);padding:12px 0}
+body .full-patient-data dt{font-weight:600;font-size:.8rem;color:var(--muted)}
+body .full-patient-data dd{margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:800px){body .agenda-workspace{grid-template-columns:1fr}body .agenda-calendar{max-width:320px}body .full-patient-data dl{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){body .professional-pair,body .full-patient-data dl,body .patient-data-group .form-grid{grid-template-columns:1fr}body .patient-data-group .field{grid-column:1/-1!important}body .agenda-reference-head{flex-wrap:wrap}body .agenda-reference-actions{flex-wrap:wrap}body .professional-pair .field{grid-column:1/-1!important}}
+@media print{body .full-patient-data dl{grid-template-columns:repeat(3,minmax(0,1fr))}body .full-patient-data dl>div{break-inside:avoid}body .doc .table-wrap{overflow:visible!important}body .doc table{min-width:0!important;width:100%;font-size:10px}body .doc th,body .doc td{padding:6px;overflow-wrap:anywhere}body .doc .full-patient-data{font-size:11px}}

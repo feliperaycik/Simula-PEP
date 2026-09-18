@@ -1,0 +1,3 @@
+/* Cores do indicador de cada atendimento na Agenda. */
+.patient-dot.completed { background: #168056; }
+.patient-dot.cancelled { background: #c53d4d; }

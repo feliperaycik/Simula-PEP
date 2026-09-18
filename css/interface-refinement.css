@@ -1,0 +1,92 @@
+/* Refinamentos de interface: pacientes, busca, acessibilidade e tema noturno. */
+:root{--directory-blue:#0d5c91;--directory-green:#168c76;--directory-surface:#fff;--directory-soft:#eef4f7}
+
+/* A escala amplia o texto sem aplicar zoom no documento, evitando cortes e painéis deslocados. */
+body.a11y-scaled{zoom:1!important}
+body.a11y-scaled :is(.content p,.content li,.content label,.content input,.content select,.content textarea,.content button,.content .btn,.content td,.content th,.nav a,.nav-parent,.account-menu>a,.account-menu>button){font-size:calc(14px * var(--a11y-scale,1))!important;line-height:1.45}
+body.a11y-scaled :is(.content h1,.content h2,.content h3){line-height:1.2}
+body.a11y-scaled .content h1{font-size:calc(26px * var(--a11y-scale,1))!important}
+body.a11y-scaled .content h2{font-size:calc(20px * var(--a11y-scale,1))!important}
+body.a11y-scaled .content{overflow-x:clip}
+body.a11y-scaled .toolbar,body.a11y-scaled .patient-directory-actions,body.a11y-scaled .agenda-reference-head{gap:12px}
+body.a11y-scaled .patient-card-data{grid-template-columns:1fr}
+
+/* Campos de busca seguem o mesmo tamanho e foco em todas as telas. */
+.portal-search input,.patient-directory-search input,.patient-search-toolbar input,.agenda-search #quickSearch{box-sizing:border-box;min-height:44px;border-radius:10px;font-size:14px!important;line-height:1.25}
+.portal-search input{width:100%}
+.patient-directory{max-width:1120px}
+.patient-directory-actions{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.patient-directory-search{position:relative;display:flex;align-items:center;flex:1 1 340px;max-width:620px}
+.patient-directory-search svg{position:absolute;left:14px;width:19px;height:19px;color:var(--muted);pointer-events:none}
+.patient-directory-search input{width:100%;padding:10px 13px 10px 43px!important;background:var(--directory-surface)!important;border:1px solid var(--line)!important;color:var(--ink)!important}
+.patient-directory-search input:focus{outline:3px solid #168c7633;outline-offset:1px;border-color:var(--directory-green)!important}
+.patient-filter-trigger{width:44px;height:44px;min-width:44px;padding:0!important;display:grid;place-items:center}
+.patient-new-button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;background:var(--directory-green)!important;border-color:var(--directory-green)!important}
+.patient-filter-summary{margin:0 0 12px;color:var(--muted);font-size:13px}
+.patient-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.patient-card{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--directory-surface);box-shadow:0 3px 11px #17384a0d}
+.patient-card-main{display:grid;grid-template-columns:46px minmax(0,1fr);column-gap:12px;align-items:center;padding:17px 17px 13px;color:var(--ink);text-decoration:none}
+.patient-card-main:hover{background:var(--directory-soft)}
+.patient-card-main:focus-visible,.patient-card-actions :focus-visible,.patient-filter-options button:focus-visible{outline:3px solid var(--directory-green);outline-offset:-3px}
+.patient-card-avatar{display:grid;grid-row:span 2;place-items:center;width:42px;height:42px;border-radius:50%;background:#d86da5;color:#fff;font-size:15px;font-weight:800}
+.patient-card-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:750}
+.patient-card-id{color:var(--muted);font-size:12px}
+.patient-card-data{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-top:1px solid var(--line)}
+.patient-card-data div{padding:11px 14px;border-right:1px solid var(--line)}
+.patient-card-data div:last-child{border-right:0}
+.patient-card-data dt{margin-bottom:3px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.patient-card-data dd{margin:0;color:var(--ink);font-size:13px;overflow-wrap:anywhere}
+.patient-card-actions{display:flex;justify-content:flex-end;gap:8px;padding:11px 14px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--directory-soft) 58%,transparent)}
+.patient-card-actions .icon-button{width:38px;height:36px;min-width:38px;padding:0;display:grid;place-items:center}
+.patient-directory-empty{display:grid;gap:5px;min-height:160px;place-content:center;text-align:center;border:1px dashed var(--line);border-radius:12px;background:var(--directory-surface);color:var(--muted)}
+
+/* Painel de opções inspirado no comportamento de folha inferior da referência. */
+.modal:has(.patient-filter-sheet){align-items:flex-end;padding:0;background:#07192388}
+.modal:has(.patient-filter-sheet) .modal-box{width:min(700px,100%);max-height:min(75dvh,620px);margin:0;padding:0;border-radius:18px 18px 0 0;overflow:auto}
+.patient-filter-sheet{padding:13px 20px 20px}.sheet-handle{display:block;width:42px;height:4px;margin:0 auto 15px;border-radius:99px;background:var(--line)}
+.patient-filter-sheet h2{margin:0 0 5px}.patient-filter-sheet>p{margin:0 0 14px;color:var(--muted)}
+.patient-filter-options{margin:0 -20px;border-top:1px solid var(--line)}
+.patient-filter-options button{display:flex;justify-content:space-between;width:100%;padding:15px 20px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);text-align:left;box-shadow:none}
+.patient-filter-options button:hover,.patient-filter-options button.active{background:#dceefb;color:var(--directory-blue);transform:none}
+.patient-filter-options b,.patient-filter-options small{display:block}.patient-filter-options small{margin-top:3px;color:var(--muted);font-size:12px;font-weight:400}
+.patient-filter-sheet .actions{justify-content:flex-end;margin-top:15px}
+
+.semester-help{display:block;margin-top:5px;color:var(--muted);font-size:12px;font-weight:400}
+input[readonly][aria-readonly="true"]{cursor:not-allowed;background:var(--pale)!important}
+
+/* Agenda no modo noturno: cartões, calendário, filtros e controles usam a mesma paleta. */
+body.dark .agenda-reference,body.dark .agenda-reference-head,body.dark .agenda-workspace{color:var(--ink)}
+body.dark :is(.agenda-calendar,.agenda-reference-list,.agenda-reference-cancelled){background:var(--white)!important;border-color:var(--line)!important}
+body.dark .agenda-reference .agenda-list-header,body.dark .agenda-reference .agenda-row{border-color:var(--line)!important;color:var(--ink)!important}
+body.dark .agenda-reference .agenda-row:hover{background:var(--pale)!important}
+body.dark .agenda-reference .agenda-status-select{background:#111b23!important;color:var(--ink)!important;border-color:#40515f!important}
+body.dark .agenda-reference .agenda-new-button{background:#04729c!important;color:#fff!important;border-color:#04729c!important}
+body.dark .agenda-reference .calendar-day{color:var(--ink)!important}body.dark .agenda-reference .calendar-day.selected{background:#04729c!important;color:#fff!important}
+body.dark .patient-card,body.dark .patient-directory-empty{background:var(--white);border-color:var(--line);box-shadow:0 4px 14px #0004}
+body.dark .patient-card-main:hover,body.dark .patient-filter-options button:hover,body.dark .patient-filter-options button.active{background:var(--pale);color:#9bdcff}
+body.dark .patient-card-actions{background:#111b2388}.dark .patient-directory-search input{background:#111b23!important;border-color:#40515f!important}.dark .patient-filter-sheet{background:var(--white);color:var(--ink)}
+
+@media(max-width:650px){
+  .patient-directory-actions{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:9px}
+  .patient-directory-search{grid-column:1/-1;max-width:none}.patient-new-button{grid-column:1/2}.patient-filter-trigger{grid-column:2}
+  .patient-grid{grid-template-columns:1fr;gap:12px}.patient-card-data{grid-template-columns:repeat(3,minmax(0,1fr))}.patient-card-data div{padding:10px}
+  body.a11y-scaled .patient-directory-actions{grid-template-columns:1fr}.patient-filter-trigger,body.a11y-scaled .patient-new-button{grid-column:auto;width:100%}
+}
+@media(max-width:420px){.patient-card-data{grid-template-columns:1fr}.patient-card-data div{border-right:0;border-bottom:1px solid var(--line)}.patient-card-data div:last-child{border-bottom:0}}
+
+/* Ajustes solicitados: escala de texto, filtros e espaçamentos. */
+body.a11y-scaled :is(.agenda-reference,.agenda-reference *, .patient-search,.patient-search *, .patient-record-banner,.patient-record-banner *, .clinical-tabs,.clinical-tabs *, #clinical,#clinical *, .triaged-patients-list,.triaged-patients-list *){font-size:calc(14px * var(--a11y-scale,1))!important;line-height:1.45}
+body.a11y-scaled :is(.agenda-reference h1,.agenda-reference h2,.agenda-reference h3,.patient-search h1,.patient-search h2,.patient-search h3,.patient-record-banner h1,.patient-record-banner h2,.patient-record-banner h3,#clinical h1,#clinical h2,#clinical h3,.triaged-patients-list h1,.triaged-patients-list h2,.triaged-patients-list h3){line-height:1.2;font-size:calc(20px * var(--a11y-scale,1))!important}
+body.a11y-scaled .agenda-reference .agenda-patient{font-size:calc(15px * var(--a11y-scale,1))!important}
+body.a11y-scaled .agenda-reference .agenda-patient-id,body.a11y-scaled .agenda-reference .agenda-list-header{font-size:calc(12px * var(--a11y-scale,1))!important}
+.patient-directory-filters{margin:0 0 12px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--white)}
+.patient-directory-filters .field{margin:0;max-width:340px}
+.agenda-triage-button{min-height:36px;padding:7px 10px;white-space:nowrap}
+.agenda-triage-button .menu-icon{display:block;width:20px;height:20px;object-fit:contain}.agenda-triage-button .menu-icon-dark{display:none}body.dark .agenda-triage-button .menu-icon-light{display:none}body.dark .agenda-triage-button .menu-icon-dark{display:block}
+.triaged-patients-list h2{margin-top:0}.triaged-patient-card{display:grid;gap:5px;padding:17px;color:var(--ink);text-decoration:none}.triaged-patient-card:hover{background:var(--directory-soft)}
+.record-heading .muted{display:block;margin-top:6px}
+.report-metrics{gap:24px;margin-bottom:24px}
+body:is([data-page="pacientes"],[data-page="atendimento"],[data-page="prontuario"],[data-page="relatorios"]) .page-head{padding-bottom:12px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+@media(max-width:650px){body.a11y-scaled .agenda-reference-head,body.a11y-scaled .agenda-reference-actions,body.a11y-scaled .agenda-row-actions{align-items:stretch;flex-wrap:wrap}.agenda-triage-button{width:100%}.patient-directory-filters .field{max-width:none}.report-metrics{gap:16px;margin-bottom:16px}}
+@media(min-width:541px){body .agenda-reference .agenda-list-header,body .agenda-reference .agenda-row{grid-template-columns:62px minmax(64px,.6fr) minmax(145px,1.6fr) minmax(120px,1.3fr) minmax(110px,1fr) 158px minmax(180px,.9fr)!important;min-width:965px!important}body .agenda-reference .agenda-row-actions{display:flex!important;align-items:center;gap:5px}}
+@media(max-width:540px){body .agenda-reference .agenda-row{grid-template-columns:62px minmax(0,1fr)!important;min-width:0!important;gap:8px!important;padding:12px!important}body .agenda-reference .agenda-row>:nth-child(1){grid-column:1!important;grid-row:1!important}body .agenda-reference .agenda-row>:nth-child(2){grid-column:2!important;grid-row:1!important}body .agenda-reference .agenda-row>:nth-child(3){grid-column:2!important;grid-row:2!important}body .agenda-reference .agenda-row>:nth-child(4){grid-column:2!important;grid-row:3!important}body .agenda-reference .agenda-row>:nth-child(5){grid-column:2!important;grid-row:4!important;display:flex!important}body .agenda-reference .agenda-row>:nth-child(6){grid-column:2!important;grid-row:5!important;display:flex!important}body .agenda-reference .agenda-row-actions{grid-column:2!important;grid-row:6!important;display:flex!important;flex-wrap:wrap;gap:6px}.agenda-triage-button{width:auto!important}}

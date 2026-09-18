@@ -1,0 +1,2 @@
+/* Marca institucional exibida em todas as áreas autenticadas. */
+.sidebar .brand{font-size:0!important;height:70px;padding:3px 4px 12px!important;background:#fff}.sidebar .brand-mark{display:none}.sidebar .brand:before{content:"";display:block;width:185px;height:56px;background:#fff url('../assets/senac-logo.png') left center/contain no-repeat}
