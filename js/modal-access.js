@@ -1,0 +1,10 @@
+/* Fechamento das prévias preserva a proteção dos formulários não salvos. */
+(()=>{
+ let opener=null,startedOutside=false;
+ const previousModal=window.modal,previousClose=window.closeModal;
+ window.modal=(...args)=>{const active=document.activeElement;previousModal(...args);const box=document.querySelector('#modalBox'),overlay=document.querySelector('#modal');if(!overlay?.classList.contains('active'))return;if(!box.contains(active))opener=active;box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-label','Visualização do documento ou formulário');box.tabIndex=-1;if(!box.querySelector('.close')){const close=document.createElement('button');close.type='button';close.className='close preview-close no-print';close.setAttribute('aria-label','Fechar visualização');close.textContent='×';close.onclick=()=>window.closeModal();box.prepend(close);}box.focus();};
+ window.closeModal=()=>{previousClose();if(!document.querySelector('#modal')?.classList.contains('active')){document.body.classList.remove('printing-document');if(opener?.isConnected)opener.focus();}};
+ document.addEventListener('pointerdown',e=>{startedOutside=e.target.id==='modal';});
+ document.addEventListener('click',e=>{if(e.target.id==='modal'&&(startedOutside||e.detail===0))window.closeModal();});
+ document.addEventListener('keydown',e=>{const overlay=document.querySelector('#modal');if(!overlay?.classList.contains('active'))return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();window.closeModal();return;}if(e.key==='Tab'){const box=document.querySelector('#modalBox'),items=[...box.querySelectorAll('button,a[href],input,select,textarea,[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);if(!items.length){e.preventDefault();box.focus();return;}const first=items[0],last=items.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===box)){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===box)){e.preventDefault();first.focus();}}},true);
+})();

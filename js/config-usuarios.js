@@ -1,0 +1,2 @@
+/* Gestão de usuários visível apenas a docentes e administradores. */
+(async()=>{const firebase=await window.PEPFirebaseReady;if(!firebase.enabled)return;const {profile}=await firebase.sessionReady;if(!firebase.isAdmin(profile))return;const shortcut=document.createElement('section');shortcut.className='form-card';shortcut.innerHTML='<h2>Gestão de usuários</h2><p class="muted">Cadastre e gerencie os acessos de alunos e docentes.</p><a class="btn" href="usuarios.html">Gerenciar usuários</a>';document.querySelector('.content')?.append(shortcut);})();
