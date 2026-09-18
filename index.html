@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PEP — Acesso</title>
+  <link rel="stylesheet" href="css/style.css?v=17-20260911"><link rel="stylesheet" href="css/preview.css"><link rel="stylesheet" href="css/login-reference.css">
+  <link rel="icon" type="image/png" href="assets/favicon.png?v=4da3b329dc0e">
+</head>
+<body class="login">
+  <main class="login-card modern-login">
+    <section class="login-form-side">
+      <div class="brand login-brand"><img src="assets/senac-logo.png" alt="Senac Enfermagem"></div>
+      <h1>Faça login na sua conta</h1>
+      <p class="subtitle">Prontuário Eletrônico do Paciente</p>
+      <form id="loginForm" novalidate>
+        <label class="field">E-mail<span class="input-icon">✉</span><input id="email" type="email" placeholder="Digite seu e-mail de acesso" autocomplete="email" required></label>
+        <label class="field">Senha<span class="input-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"></circle><path d="m11 12 8-8m-3 0h3v3m-5 5 3 3"></path></svg></span><input id="senha" type="password" placeholder="Digite sua senha" autocomplete="current-password" required></label>
+        <div class="login-options"><label><input type="checkbox" id="showPassword"> Mostrar senha</label><a id="forgot">Esqueci minha senha</a></div>
+        <div class="error" id="loginError" aria-live="polite"></div>
+        <button class="full login-button" type="submit">Entrar <span>→</span></button>
+      </form>
+      <p class="access-tip">Acessos são criados pela conta administradora dentro do sistema.</p>
+    </section>
+    <section class="login-welcome">
+      <div class="welcome-copy"><span class="eyebrow">PEP · AMBIENTE SEGURO</span><h2>Bem-vindo<br><small>ao seu novo PEP!</small></h2><p><b>+ segurança</b><br><b>+ aprendizado</b><br><b>+ cuidado</b></p></div>
+      <div class="login-illustration"><img src="assets/login-senac-enfermagem.png" alt="Ilustração de computador com painel acadêmico de enfermagem"></div>
+    </section>
+  </main>
+  <div id="toast" class="toast"></div>
+  <script>window.PEPPreviewLocalOnly = false;localStorage.removeItem('pep_preview_local');</script><script src="js/accessibility.js?v=19-20260917"></script><script src="js/auth.js?v=17-20260911"></script>
+</body>
+</html>

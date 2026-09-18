@@ -1,0 +1,18 @@
+ATUALIZAÇÃO v29 — RECEITUÁRIO
+
+Foram mantidas as correções anteriores de modo escuro, responsividade, sinais vitais e fechamento das prévias.
+
+Nas ações gerais de impressão ficou apenas Selecionar para imprimir. Dentro da seleção é possível marcar todos os registros. Os atalhos individuais do histórico permanecem.
+
+O Receituário tem formulário e registros próprios, separados da Prescrição:
+- Nome do profissional, paciente e nascimento;
+- Data e hora;
+- Medicamento(s), nome genérico e concentração;
+- Posologia e quantidade, em campos de várias linhas;
+- CRM/UF opcional e espaço para assinatura e carimbo na impressão.
+
+Use a mesma numeração nos campos Medicamento, Posologia e Quantidade quando informar vários itens. Salve a receita e use Selecionar para imprimir. Também é possível editar e imprimir cada receita do histórico.
+
+As receitas estão incluídas no backup e no histórico do paciente. Backups antigos continuam compatíveis. Não foi feita conversão automática das prescrições em receitas.
+
+Esta versão mantém o armazenamento local do arquivo enviado. Exporte seu backup antes de substituir a instalação e mantenha o mesmo endereço/navegador para acessar os cadastros existentes.

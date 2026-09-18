@@ -1,0 +1,1 @@
+Receituário: data e hora mantidas no cadastro e histórico, retiradas da impressão da receita. Data de nascimento preservada. Logo Senac incluída no cabeçalho, no padrão dos demais documentos. Demais funcionalidades e armazenamento local mantidos.

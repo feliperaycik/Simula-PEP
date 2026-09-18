@@ -1,0 +1,1 @@
+Painel de notificações fixado à área visível da tela, com rolagem interna quando necessário. Verificado no topo, meio e final da página, nos modos claro e escuro e em larguras de celular, tablet e computador. Demais funções e dados preservados.

@@ -1,0 +1,25 @@
+PEP Senac — Prévia completa v16 (10/09/2026)
+
+1. Extraia o ZIP inteiro.
+2. Abra a pasta PEP-Senac-Preview-Completa.
+3. Execute INICIAR-PEP.bat e mantenha a janela aberta durante o uso.
+4. Acesse http://localhost:8765/ no navegador.
+
+Acesso demonstrativo inicial: aluno@pep.com / 123456.
+Se você alterou a senha em Configurações, use a nova senha.
+
+Esta entrega mantém o modo de prévia local do ZIP fornecido. Os cadastros
+e as alterações são armazenados no navegador. Nenhuma publicação foi feita.
+Os arquivos de integração Firebase foram preservados, sem ativação remota.
+
+O número de prontuário aproveita o identificador persistente do paciente,
+com no mínimo seis dígitos (ex.: 000001). Cadastros existentes mantêm os
+vínculos com seus registros. Esse número pode ser usado nas buscas.
+
+Libras: abra Acessibilidade no menu de perfil e ative o tradutor.
+O VLibras precisa de acesso à internet. As opções de contraste, inversão,
+tamanho do texto e redução de movimentos funcionam localmente.
+
+Suporte: simulapep@gmail.com
+
+Confira ALTERACOES-v16.txt para o resumo da revisão e limites da validação.

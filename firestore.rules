@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function userDoc() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function hasActiveProfile() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc().data.status == 'Ativo';
+    }
+    function isStaff() {
+      return hasActiveProfile() && userDoc().data.perfil in ['Docente', 'Administrador'];
+    }
+    function isAdmin() {
+      return hasActiveProfile() && userDoc().data.perfil == 'Administrador';
+    }
+    function currentUnitKey() {
+      return userDoc().data.keys().hasAny(['unidadeChave'])
+        ? userDoc().data.unidadeChave
+        : 'Unidade%20acad%C3%AAmica';
+    }
+    function canAccessUnit(unitKey) {
+      return hasActiveProfile() && (isAdmin() || currentUnitKey() == unitKey);
+    }
+    match /users/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin() || (isStaff() && resource.data.unidadeChave == currentUnitKey()));
+      allow list: if isAdmin() || (isStaff() && resource.data.unidadeChave == currentUnitKey());
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'updatedAt']))
+        || (signedIn() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastLoginAt'])
+          && request.resource.data.lastLoginAt == request.time);
+      allow delete: if isAdmin();
+    }
+    match /units/{unitId} {
+      allow read: if hasActiveProfile();
+      allow create, update, delete: if isAdmin();
+    }
+    match /supportTickets/{ticketId} {
+      allow create: if hasActiveProfile()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.destinatario == 'marizaproencaa@gmail.com';
+      allow get, update: if hasActiveProfile() && (resource.data.ownerUid == request.auth.uid || isStaff());
+      allow list, delete: if isStaff();
+    }
+    match /workspaces/academic/units/{unitKey}/stores/{store}/items/{item} {
+      allow read, write: if canAccessUnit(unitKey);
+    }
+  }
+}

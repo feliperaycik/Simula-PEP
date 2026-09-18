@@ -1,0 +1,49 @@
+REVISÃO v16 — 10/09/2026
+
+AGENDA
+- Busca de agendamento, com pesquisa por paciente/identificação, profissional ou agendamento.
+- Removido o calendário pequeno ao lado da data. Calendário interativo ao lado dos agendamentos no computador; acima em telas menores.
+- Fontes padronizadas; nome e horário sem negrito. Cabeçalhos e valores alinhados nas mesmas colunas.
+- Nome do paciente abre o prontuário; Abrir abre a edição do agendamento.
+- Aguardando amarelo; Triagem laranja; Em andamento azul Senac; Concluído verde; Cancelado vermelho.
+- Espaçamento corrigido na mensagem de ausência de cancelamentos.
+
+PACIENTES E TRIAGEM
+- Linhas clicáveis, acessíveis por teclado, com destaque ao passar o mouse.
+- Removidas as ações Ver e Prontuário da listagem. Excluir dentro da edição.
+- Mais espaço para nome e CPF; identificação visível e pesquisável.
+- Tela e menu Atendimento renomeados para Triagem, com apenas o formulário de triagem.
+- Busca por paciente abaixo do título e subtítulo Simulador de Triagem.
+
+PRONTUÁRIO
+- Sem paciente fixo quando acessado pelo menu: começa pela busca.
+- Resumo agora é Ficha; Triagem agora é Histórico; Histórico completo agora é Registro.
+- Identificação também nos documentos de impressão; alergias em um trecho contínuo.
+- Profissional e Cargo lado a lado, obrigatórios na evolução, inclusive na edição.
+
+RELATÓRIOS
+- Pesquisa por paciente e identificação; botão de filtro abre agendamento, data e profissional.
+- Dados pessoais aparecem somente após uma busca; limpar esconde novamente os registros.
+- Mantidos somente os totais de pacientes e atendimentos.
+- Exportação CSV limitada aos atendimentos encontrados.
+
+GERAL
+- Busca no portal para páginas, pacientes, agendamentos e registros clínicos.
+- Novo indicador de expansão no menu Prontuário; aviso acadêmico no rodapé.
+- Notificações: quatro itens visíveis, rolagem para os demais e Visualizar tudo.
+- Alteração de senha na prévia local; mantida a integração de senha do Firebase.
+- Suporte alterado para simulapep@gmail.com.
+- Correções de fontes, buscas, estados de foco e sombras; ampliação de 80% a 200%.
+- Modo escuro ampliado às telas, campos, tabelas, menus e prévias de impressão.
+- Alto contraste preto/branco com controles amarelos e opção Inverter cores.
+- VLibras integrado pelo carregador oficial, ativado em Acessibilidade e dependente de internet.
+
+VALIDAÇÃO E LIMITES
+- 20 verificações automáticas de lógica aprovadas; sintaxe dos 20 scripts conferida.
+- Referências locais das páginas, folhas de estilo e scripts conferidas.
+- Não foi realizada conferência visual nem teste de interação em navegador.
+- A página https://www.cmsjp.pr.gov.br/ retornou indisponibilidade (503),
+  portanto o contraste não foi copiado nem comparado visualmente com ela.
+- VLibras segue https://vlibras.gov.br/doc/widget/installation/webpageintegration.html .
+  Seu carregamento externo não foi validado em navegador nesta revisão.
+- Prévia local preservada; nenhuma implantação ou teste de conta Firebase realizado.

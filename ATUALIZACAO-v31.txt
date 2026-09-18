@@ -1,0 +1,1 @@
+Data e hora removidas dos formulários de criação e edição de receitas. O horário do registro é salvo automaticamente no histórico. Campo Observação opcional incluído no formulário, edição, histórico e impressão; quando vazio, não aparece na receita impressa. Demais funções preservadas.
