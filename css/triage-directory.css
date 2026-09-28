@@ -1,0 +1,8 @@
+.triage-directory{margin-bottom:20px}
+.triage-directory .triage-patient-choice{display:grid;justify-content:normal;width:100%;border:0;border-radius:0;background:transparent!important;box-shadow:none;color:var(--ink)!important;text-align:left;font-weight:inherit}
+body:not(.dark) .triage-directory .triage-patient-choice:hover{background:var(--directory-soft)!important}
+body.dark .triage-directory .triage-patient-choice:hover{background:var(--pale)!important}
+.triage-directory .triage-patient-choice:focus-visible{outline:3px solid var(--directory-green);outline-offset:-3px}
+.triage-directory .triage-patient-selected{border-color:var(--directory-green);box-shadow:0 0 0 2px color-mix(in srgb,var(--directory-green) 18%,transparent)}
+.triage-directory .patient-card-actions button{min-height:36px}
+.triage-directory+.attendance-panel form{scroll-margin-top:90px}

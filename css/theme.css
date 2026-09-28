@@ -41,7 +41,6 @@ body.a11y-scaled{zoom:var(--a11y-scale,1)}
 .nav-submenu a{padding:7px 9px;margin:1px 0;font-size:12px}
 .cancelled .agenda-row{border-left:0!important;background:transparent!important}
 .cancelled .agenda-row:hover{background:#f5fbfd!important}
-body.high-contrast :focus-visible{outline:3px solid #ffbf00!important;outline-offset:2px!important}
 body:not(.dark){--bg:#dfe6e9;--white:#eef2f3;--ink:#203744;--muted:#607580;--line:#c2cdd2;--pale:#dce9ee;background:var(--bg)}
 body:not(.dark) .app,body:not(.dark) .main,body:not(.dark) .content{background:var(--bg)!important}
 body:not(.dark) .sidebar,body:not(.dark) .topbar,body:not(.dark) .card,body:not(.dark) .form-card,body:not(.dark) .table-wrap,body:not(.dark) .notify-panel,body:not(.dark) .modal-box,body:not(.dark) .account-menu,body:not(.dark) .patient-banner{background:var(--white)!important;border-color:var(--line)!important}
@@ -89,22 +88,6 @@ body.dark .accessibility-panel{background:#111b23;border-color:var(--line)}
 body.dark .accessibility-panel button{background:#22313d;color:var(--ink);border-color:#40515f}
 
 /* Reinforced contrast deliberately overrides both regular themes. */
-body.high-contrast:not(.dark){--bg:#fff;--white:#fff;--ink:#000;--muted:#171717;--line:#000;--pale:#d8ecff;--blue:#004c99;--navy:#002f5f;background:#fff!important;color:#000!important}
-body.high-contrast:not(.dark) .app,body.high-contrast:not(.dark) .main,body.high-contrast:not(.dark) .content{background:#fff!important}
-body.high-contrast:not(.dark) .sidebar,body.high-contrast:not(.dark) .topbar,body.high-contrast:not(.dark) .card,body.high-contrast:not(.dark) .form-card,body.high-contrast:not(.dark) .table-wrap,body.high-contrast:not(.dark) .notify-panel,body.high-contrast:not(.dark) .modal-box,body.high-contrast:not(.dark) .account-menu,body.high-contrast:not(.dark) .patient-banner{background:#fff!important;border-color:#000!important;box-shadow:0 0 0 1px #000!important}
-body.high-contrast:not(.dark) input,body.high-contrast:not(.dark) select,body.high-contrast:not(.dark) textarea{background:#fff!important;color:#000!important;border:2px solid #000!important}
-body.high-contrast:not(.dark) th{background:#002f5f!important;color:#fff!important}
-body.high-contrast:not(.dark) td{color:#000!important;border-color:#000!important}
-body.high-contrast:not(.dark) .muted,body.high-contrast:not(.dark) small{color:#171717!important}
-body.high-contrast:not(.dark) .nav a,body.high-contrast:not(.dark) .nav-parent{color:#000!important}
-body.high-contrast:not(.dark) .nav a:hover,body.high-contrast:not(.dark) .nav a.active,body.high-contrast:not(.dark) .nav-parent:hover,body.high-contrast:not(.dark) .nav-parent.active{background:#002f5f!important;color:#fff!important}
-body.dark.high-contrast{--bg:#000;--white:#000;--ink:#fff;--muted:#fff;--line:#fff;--pale:#002d4d;--blue:#73d7ff;--navy:#fff;background:#000!important;color:#fff!important}
-body.dark.high-contrast .app,body.dark.high-contrast .main,body.dark.high-contrast .content,body.dark.high-contrast .sidebar,body.dark.high-contrast .topbar,body.dark.high-contrast .card,body.dark.high-contrast .form-card,body.dark.high-contrast .table-wrap,body.dark.high-contrast .notify-panel,body.dark.high-contrast .modal-box,body.dark.high-contrast .account-menu,body.dark.high-contrast .patient-banner{background:#000!important;color:#fff!important;border-color:#fff!important}
-body.dark.high-contrast input,body.dark.high-contrast select,body.dark.high-contrast textarea{background:#000!important;color:#fff!important;border:2px solid #fff!important}
-body.dark.high-contrast th{background:#fff!important;color:#000!important}
-body.dark.high-contrast td,body.dark.high-contrast .muted,body.dark.high-contrast small{color:#fff!important;border-color:#fff!important}
-body.dark.high-contrast .nav a,body.dark.high-contrast .nav-parent{color:#fff!important}
-body.dark.high-contrast .nav a:hover,body.dark.high-contrast .nav a.active,body.dark.high-contrast .nav-parent:hover,body.dark.high-contrast .nav-parent.active{background:#fff!important;color:#000!important}
 
 @media(max-width:650px){.top-actions{gap:5px}.theme-toggle{width:30px;height:30px}.bell{width:32px;height:32px}.bell img{width:21px;height:21px}.user-trigger{padding:2px}.user-trigger .avatar{display:grid}.user-trigger .user-name,.user-trigger .chevron{display:none}.account-menu{right:0;top:42px;width:min(285px,calc(100vw - 28px))}.account-summary .avatar{display:grid}}
 
@@ -295,17 +278,17 @@ button.danger:hover{background:#c53d4d10;border-color:var(--red)}
 
 /* Ajustes de contraste e dimensionamento: preservam os dados e as ações. */
 @media screen {
-  body.dark:not(.high-contrast) input:not([type=checkbox]):not([type=radio]),
-  body.dark:not(.high-contrast) select,
-  body.dark:not(.high-contrast) textarea {
+  body.dark input:not([type=checkbox]):not([type=radio]),
+  body.dark select,
+  body.dark textarea {
     background:#111b23!important;
     border:1px solid #40515f!important;
     box-shadow:inset 0 1px 3px #0005,0 2px 6px #0003;
   }
-  body.dark:not(.high-contrast) .card,
-  body.dark:not(.high-contrast) .form-card,
-  body.dark:not(.high-contrast) .table-wrap,
-  body.dark:not(.high-contrast) .patient-form {box-shadow:0 4px 14px #0004}
+  body.dark .card,
+  body.dark .form-card,
+  body.dark .table-wrap,
+  body.dark .patient-form {box-shadow:0 4px 14px #0004}
   body.dark .agenda-list-header,body.dark .agenda-row,body.dark .side-profile {border-color:var(--line)}
   body.dark .time-chip {background:var(--pale);color:var(--ink);border-color:var(--line);box-shadow:0 2px 5px #0003}
   body.dark .calendar-day.today {background:#087b9c;color:#fff}
@@ -363,6 +346,7 @@ button.danger:hover{background:#c53d4d10;border-color:var(--red)}
 /* Seleção de impressão e documentos legíveis nos dois temas. */
 .print-selection fieldset{min-width:0;border:1px solid var(--line);border-radius:8px;margin:16px 0;padding:14px}.print-selection legend{font-weight:bold;padding:0 6px}.print-check{display:flex;align-items:flex-start;gap:9px;margin:10px 0;overflow-wrap:anywhere}.print-check input[type=checkbox]{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:var(--blue)}.print-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}.preview-close{position:sticky;top:0;display:flex;margin-left:auto;width:44px;height:44px;z-index:2;background:var(--white);border:1px solid var(--line)}
 body .modal-box:has(.doc),body .doc{background:#fff!important;color:#183447!important;color-scheme:light}body .doc{--white:#fff;--ink:#183447;--muted:#607580;--line:#d9e4ea;--blue:#0d5c91}body .doc h1,body .doc h2,body .doc h3,body .doc strong,body .doc b,body .doc p,body .doc span,body .doc footer,body .doc small{color:#183447!important}.doc .recipe-signature{width:min(320px,100%);margin:48px auto 12px;text-align:center;break-inside:avoid}.recipe-signature-line{border-top:1px solid #183447}.doc .print-record{overflow-wrap:anywhere}.doc .print-record p{white-space:pre-wrap}.doc .academic-print{font-size:10px}.print-selection .actions{position:sticky;bottom:0;background:var(--white);padding:10px 0}
+input[type="search"]{min-height:42px;padding-left:38px!important;border-radius:8px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2369808f' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m16 16 4 4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center}.report-dashboard-chart,.report-distribution{border:1px solid var(--line);border-radius:10px;padding:14px}body.dark .account-menu>button:not([aria-pressed="true"]):not(.active),body.dark .portal-utility-bar .utility-notes:not(.active){background:transparent!important;color:var(--muted)!important}body.dark .account-menu>button:hover,body.dark .portal-utility-bar .utility-notes:hover{background:var(--pale)!important;color:var(--ink)!important}@media print{body:not(.printing-document) .app,body:not(.printing-document) .notify-panel,body:not(.printing-document) .portal-utility-bar,body:not(.printing-document) .a11y-floating-panel,body:not(.printing-document) .accessibility-panel,body:not(.printing-document) [class*="libras"],body:not(.printing-document) [id*="vlibras"]{display:none!important}.printing-document .topbar,.printing-document .sidebar,.printing-document .portal-utility-bar,.printing-document .accessibility-panel,.printing-document .a11y-floating-panel,.printing-document [class*="libras"],.printing-document [id*="vlibras"]{display:none!important}.print-prescription-medication{padding:8px 0;border-bottom:1px solid #d9e4ea}.print-prescription-medication:last-child{border-bottom:0}}
 @media(max-width:650px){.print-field-grid{grid-template-columns:1fr}.record-heading{flex-wrap:wrap}.record-actions{width:100%;gap:6px}.record-actions button{flex:1 1 90px}.clinical-print-document .print-header{flex-wrap:wrap}.print-selection fieldset{padding:10px}}
 @media print{.preview-close,.print-selection{display:none!important}.clinical-print-document{padding:0!important;max-width:none}.clinical-print-document .print-record{break-inside:auto}.clinical-print-document .print-record-head{break-after:avoid}.doc *{box-shadow:none!important;text-shadow:none!important}}
 .recipe-form textarea{min-height:100px}.recipe-document .recipe-professional{font-size:18px;font-weight:bold;text-align:center;margin-bottom:20px}.recipe-document h1{text-align:center;font-size:26px;margin:0 0 26px}.recipe-patient{padding-bottom:14px;border-bottom:1px solid #ccdbe2}.recipe-writing{margin:22px 0}.recipe-writing h3{font-size:15px;margin:0 0 8px}.recipe-writing p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;line-height:1.6}.recipe-document .recipe-signature{margin-top:80px;width:min(420px,100%);font-size:12px}.recipe-document footer{font-size:9px;text-align:center;margin-top:24px;color:#607580}.recipe-page+.recipe-page{border-top:1px solid #ccdbe2;padding-top:35px;margin-top:35px}@media print{.recipe-page{break-after:page}.recipe-page:last-of-type{break-after:auto}.recipe-page+.recipe-page{border:0;padding-top:0;margin-top:0}.recipe-writing h3{break-after:avoid}.recipe-document .recipe-signature{break-inside:avoid}}
