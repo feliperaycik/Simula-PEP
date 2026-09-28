@@ -8,9 +8,7 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && userDoc().data.status == 'Ativo';
     }
-    function isStaff() {
-      return hasActiveProfile() && userDoc().data.perfil in ['Docente', 'Administrador'];
-    }
+    function isStaff() { return hasActiveProfile() && userDoc().data.perfil in ['Docente', 'Administrador']; }
     function isAdmin() {
       return hasActiveProfile() && userDoc().data.perfil == 'Administrador';
     }
@@ -19,13 +17,25 @@ service cloud.firestore {
         ? userDoc().data.unidadeChave
         : 'Unidade%20acad%C3%AAmica';
     }
+    function currentClassKey() { return userDoc().data.keys().hasAny(['turmaChave']) ? userDoc().data.turmaChave : 'Turma%20acad%C3%AAmica'; }
     function canAccessUnit(unitKey) {
       return hasActiveProfile() && (isAdmin() || currentUnitKey() == unitKey);
+    }
+    function canAccessClass(unitKey, classKey) { return hasActiveProfile() && (isAdmin() || (currentUnitKey() == unitKey && currentClassKey() == classKey)); }
+    function isStudent() { return hasActiveProfile() && userDoc().data.perfil == 'Aluno'; }
+    function studentClass(unitKey, classKey) {
+      return isStudent() && currentUnitKey() == unitKey && currentClassKey() == classKey;
     }
     match /users/{userId} {
       allow get: if signedIn() && (request.auth.uid == userId || isAdmin() || (isStaff() && resource.data.unidadeChave == currentUnitKey()));
       allow list: if isAdmin() || (isStaff() && resource.data.unidadeChave == currentUnitKey());
-      allow create: if isAdmin();
+      allow create: if isAdmin() || (isStaff() && !isAdmin()
+        && request.resource.data.perfil == 'Aluno'
+        && request.resource.data.unidadeChave == currentUnitKey()
+        && request.resource.data.unidade == userDoc().data.get('unidade', 'Unidade acadêmica')
+        && exists(/databases/$(database)/documents/units/$(currentUnitKey())/classes/$(request.resource.data.turmaChave))
+        && request.resource.data.status == 'Ativo'
+        && request.resource.data.semestre in ['1º semestre','2º semestre','3º semestre','4º semestre','5º semestre','6º semestre','7º semestre','8º semestre']);
       allow update: if isAdmin()
         || (signedIn() && request.auth.uid == userId
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'updatedAt']))
@@ -37,16 +47,51 @@ service cloud.firestore {
     match /units/{unitId} {
       allow read: if hasActiveProfile();
       allow create, update, delete: if isAdmin();
+      match /classes/{classId} { allow read: if hasActiveProfile(); allow create, update, delete: if isAdmin(); }
     }
     match /supportTickets/{ticketId} {
       allow create: if hasActiveProfile()
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.destinatario == 'marizaproencaa@gmail.com';
+        && request.resource.data.destinatario == 'simulapep@gmail.com';
       allow get, update: if hasActiveProfile() && (resource.data.ownerUid == request.auth.uid || isStaff());
       allow list, delete: if isStaff();
     }
-    match /workspaces/academic/units/{unitKey}/stores/{store}/items/{item} {
-      allow read, write: if canAccessUnit(unitKey);
+    match /workspaces/academic/units/{unitKey}/classes/{classKey}/stores/{store}/items/{item} {
+      allow read: if (canAccessClass(unitKey, classKey)
+        || (store == 'atendimentos' && isStaff() && currentUnitKey() == unitKey))
+        && (store != 'avaliacoes' || !isStudent() || resource.data.payload.alunoUid == request.auth.uid);
+      allow write: if isAdmin() || (isStaff() && currentUnitKey() == unitKey && currentClassKey() == classKey);
+      allow create, update: if store == 'pacientes' && isStudent()
+        && currentUnitKey() == unitKey && currentClassKey() == classKey
+        && request.resource.data.payload.unidade == userDoc().data.get('unidade', 'Unidade acadêmica')
+        && request.resource.data.payload.turma == userDoc().data.get('turma', 'Turma acadêmica');
+      allow create, update: if studentClass(unitKey, classKey)
+        && store in ['triagens','sinais_vitais','evolucoes','anotacoes_enfermagem','solicitacoes_exames','procedimentos','diagnosticos','planos','prescricoes','prescricoes_cuidados','receitas','auditoria']
+        && request.resource.data.payload.unidade == userDoc().data.get('unidade', 'Unidade acadêmica')
+        && request.resource.data.payload.turma == userDoc().data.get('turma', 'Turma acadêmica');
+      allow create: if studentClass(unitKey, classKey) && store == 'atendimentos'
+        && request.resource.data.payload.aluno == userDoc().data.nome
+        && request.resource.data.payload.unidade == userDoc().data.get('unidade', 'Unidade acadêmica')
+        && request.resource.data.payload.turma == userDoc().data.get('turma', 'Turma acadêmica');
+      allow update: if studentClass(unitKey, classKey) && store == 'atendimentos'
+        && resource.data.payload.aluno == userDoc().data.nome
+        && request.resource.data.payload.aluno == userDoc().data.nome
+        && request.resource.data.payload.unidade == userDoc().data.get('unidade', 'Unidade acadêmica')
+        && request.resource.data.payload.turma == userDoc().data.get('turma', 'Turma acadêmica');
+      allow delete: if studentClass(unitKey, classKey)
+        && store in ['triagens','sinais_vitais','evolucoes','anotacoes_enfermagem','solicitacoes_exames','procedimentos','diagnosticos','planos','prescricoes','prescricoes_cuidados','receitas','auditoria'];
     }
+    match /workspaces/academic/units/{unitKey}/slots/{slot} {
+      allow read: if isAdmin() || ((isStaff() || isStudent()) && currentUnitKey() == unitKey);
+      allow create: if isAdmin() || ((isStaff() || isStudent()) && currentUnitKey() == unitKey
+        && request.resource.data.turmaChave == currentClassKey());
+      allow update: if resource.data.appointmentId == request.resource.data.appointmentId
+        && (isAdmin() || ((isStaff() || isStudent()) && currentUnitKey() == unitKey
+          && resource.data.turmaChave == currentClassKey()
+          && request.resource.data.turmaChave == currentClassKey()));
+      allow delete: if isAdmin() || ((isStaff() || isStudent()) && currentUnitKey() == unitKey
+        && resource.data.turmaChave == currentClassKey());
+    }
+    match /workspaces/academic/units/{unitKey}/stores/{store}/items/{item} { allow read, write: if isAdmin(); }
   }
 }
