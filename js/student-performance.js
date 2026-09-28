@@ -8,7 +8,7 @@
     const { profile } = await firebase.sessionReady;
     if (String(profile?.perfil || '').toLocaleLowerCase('pt-BR') !== 'aluno') return;
     const studentId = profile?.uid || firebase.user?.uid || '';
-    const email = profile?.email || firebase.user?.email || '';
+    const email = profile?.email || firebase.user?.email || localStorage.getItem('pep_current_email') || '';
     const assessments = load('avaliacoes').filter(item => String(item.alunoUid || '') === String(studentId) || same(item.alunoEmail, email)).slice().reverse();
     const ratingLabel = item => {
       if (item.avaliacao) return `${item.avaliacao} — ${{ A:'ATENDIDO', PA:'PARCIALMENTE ATENDIDO', NA:'NÃO ATENDIDO' }[item.avaliacao] || item.avaliacao}`;

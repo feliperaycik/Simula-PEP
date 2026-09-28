@@ -1,24 +1,52 @@
 /* Persistência local com autoria e histórico das alterações a partir da v20. */
 const clinicalStores = ['pacientes','atendimentos','triagens','sinais_vitais','evolucoes','anotacoes_enfermagem','solicitacoes_exames','procedimentos','diagnosticos','planos','prescricoes','prescricoes_cuidados','receitas'];
-const backupStores = [...clinicalStores,'avaliacoes','auditoria','usuarios','unidades','notificacoes','chamados'];
+const backupStores = [...clinicalStores,'avaliacoes','auditoria','usuarios','unidades','turmas','notificacoes','chamados'];
 function localActor(){return {nome:localStorage.getItem('pep_current_user')||'Aluno(a) PEP',email:localStorage.getItem('pep_current_email')||'aluno@pep.com'};}
-function auditedSave(key, values){
+function auditedSave(key, values, options={}){
   const previous=JSON.parse(localStorage.getItem('pep_'+key)||'[]');
   const scoped=window.PEPAcademicContext?.mergeForSave?.(key,previous,structuredClone(values))||structuredClone(values);
   let next=scoped,audit=JSON.parse(localStorage.getItem('pep_auditoria')||'[]');
+  if(key==='atendimentos'){
+    const oldMap=new Map(previous.map(item=>[String(item.id),item]));
+    for(const item of next){
+      const old=oldMap.get(String(item.id));
+      if(!old||old.data!==item.data||old.hora!==item.hora||old.status!==item.status||old.unidade!==item.unidade)window.PEPAppointmentSlot?.validate(item,next,item.id);
+    }
+  }
   if(clinicalStores.includes(key)){
     const actor=localActor(),now=new Date().toISOString(),oldMap=new Map(previous.map(e=>[String(e.id),e]));
     next=next.map(entry=>{const old=oldMap.get(String(entry.id));const {registradoPor,...fields}=entry;return old?{...fields,...(old.registradoPor?{registradoPor:old.registradoPor}:{})}:{...fields,registradoPor:actor};});
     const academic=window.PEPAcademicContext?.get?.()||{};
-    for(const item of next){const old=oldMap.get(String(item.id));if(old&&JSON.stringify(old)!==JSON.stringify(item))audit.push({id:Date.now()+Math.random(),colecao:key,registroId:item.id,pacienteId:key==='pacientes'?item.id:item.pacienteId,acao:'Edição',em:now,usuario:actor,unidade:item.unidade||old?.unidade||academic.unit||'Unidade acadêmica',antes:old,depois:item});}
-    for(const item of previous)if(!next.some(e=>String(e.id)===String(item.id)))audit.push({id:Date.now()+Math.random(),colecao:key,registroId:item.id,pacienteId:key==='pacientes'?item.id:item.pacienteId,acao:'Exclusão',em:now,usuario:actor,unidade:item.unidade||academic.unit||'Unidade acadêmica',antes:item,depois:null});
+    for(const item of next){const old=oldMap.get(String(item.id));if(old&&JSON.stringify(old)!==JSON.stringify(item))audit.push({id:Date.now()+Math.random(),colecao:key,registroId:item.id,pacienteId:key==='pacientes'?item.id:item.pacienteId,acao:'Edição',em:now,usuario:actor,unidade:item.unidade||old?.unidade||academic.unit||'Unidade acadêmica',turma:item.turma||old?.turma||academic.classroom||'Turma acadêmica',semestre:item.semestre||old?.semestre||academic.semester||'',antes:old,depois:item});}
+    const explicitlyRemoved=new Set((options.removedIds||[]).map(entry=>String(typeof entry==='object'?entry.id:entry)));
+    for(const item of previous)if(explicitlyRemoved.has(String(item.id))&&!next.some(e=>String(e.id)===String(item.id)))audit.push({id:Date.now()+Math.random(),colecao:key,registroId:item.id,pacienteId:key==='pacientes'?item.id:item.pacienteId,acao:'Exclusão',em:now,usuario:actor,unidade:item.unidade||academic.unit||'Unidade acadêmica',turma:item.turma||academic.classroom||'Turma acadêmica',semestre:item.semestre||academic.semester||'',antes:item,depois:null});
   }
   const oldData=localStorage.getItem('pep_'+key),oldAudit=localStorage.getItem('pep_auditoria');
   try{localStorage.setItem('pep_'+key,JSON.stringify(next));if(clinicalStores.includes(key))localStorage.setItem('pep_auditoria',JSON.stringify(audit));}
   catch(error){if(oldData===null)localStorage.removeItem('pep_'+key);else localStorage.setItem('pep_'+key,oldData);if(oldAudit===null)localStorage.removeItem('pep_auditoria');else localStorage.setItem('pep_auditoria',oldAudit);alert('Não foi possível salvar. Verifique o espaço disponível no navegador e faça um backup.');throw error;}
-  if(key!=='notificacoes')window.markCurrentFormSaved?.();
-  window.PEPFirebase?.syncStore?.(key,next).catch(error=>console.warn('A alteração foi salva neste navegador, mas ainda não foi enviada ao Firebase.',error));
+  const submittedForm=key!=='notificacoes'?window.currentSubmittedForm?.():null;
+  if(key!=='notificacoes'&&key!=='pacientes')window.markCurrentFormSaved?.();
+  const context=window.PEPAcademicContext?.get?.();
+  const currentValues=context&&window.PEPAcademicContext?.belongs?next.filter(item=>window.PEPAcademicContext.belongs(key,item,context)):next;
+  const previousCurrent=context&&window.PEPAcademicContext?.belongs?previous.filter(item=>window.PEPAcademicContext.belongs(key,item,context)):previous;
+  // Uma lista local pode estar incompleta durante a hidratação. Só excluir
+  // remotamente registros cuja remoção foi solicitada explicitamente.
+  const removedIds=(options.removedIds||[]).filter(entry=>previousCurrent.some(item=>String(item.id)===String(typeof entry==='object'?entry.id:entry)));
+  const pendingPatientIds=key==='pacientes'?new Set(JSON.parse(localStorage.getItem('pep_pending_patient_ids')||'[]')):new Set();
+  const remoteValues=key==='pacientes'?currentValues.filter(item=>{const old=previousCurrent.find(entry=>String(entry.id)===String(item.id));return pendingPatientIds.has(String(item.id))||!old||JSON.stringify(old)!==JSON.stringify(item);}):currentValues;
+  const remoteSave=options.remoteCommitted||!window.PEPFirebase?.enabled?Promise.resolve(true):Promise.resolve(window.PEPFirebase.syncStore(key,remoteValues,removedIds)).then(()=>true).catch(error=>{console.warn('A alteração foi salva neste navegador, mas ainda não foi enviada ao Firebase.',error);return false});
+  remoteSave.then(synced=>{if(synced&&submittedForm?.isConnected)window.markFormSaved?.(submittedForm)});
+  if(key==='pacientes'&&window.PEPFirebase?.enabled){
+    const changedIds=remoteValues.map(item=>String(item.id));
+    remoteSave.then(synced=>{
+      const pending=new Set(JSON.parse(localStorage.getItem('pep_pending_patient_ids')||'[]'));
+      changedIds.forEach(id=>synced?pending.delete(id):pending.add(id));
+      localStorage.setItem('pep_pending_patient_ids',JSON.stringify([...pending]));
+    });
+  }
+  if(!options.remoteCommitted&&window.PEPFirebase?.enabled&&window.PEPFirebase.canSyncStore?.(key))window.__pepLastSave={promise:remoteSave,at:Date.now()};
   if(clinicalStores.includes(key))window.PEPFirebase?.syncStore?.('auditoria',load('auditoria')).catch(error=>console.warn('O histórico local ainda não foi enviado ao Firebase.',error));
+  return remoteSave;
 }
 function buildBackup(){const data={};for(const key of backupStores)data[key]=JSON.parse(localStorage.getItem('pep_'+key)||'[]');return {formato:'PEP-LOCAL',versao:1,geradoEm:new Date().toISOString(),dados:data};}
 function validateBackup(value){
@@ -26,6 +54,7 @@ function validateBackup(value){
   if(value.dados.receitas===undefined)value.dados.receitas=[];
   if(value.dados.avaliacoes===undefined)value.dados.avaliacoes=[];
   if(value.dados.unidades===undefined)value.dados.unidades=[];
+  if(value.dados.turmas===undefined)value.dados.turmas=[];
   for(const key of backupStores){const list=value.dados[key];if(!Array.isArray(list)||list.some(e=>!e||typeof e!=='object'||Array.isArray(e)))throw new Error('Dados inválidos no backup: '+key);if(clinicalStores.includes(key)&&(list.some(e=>e.id==null)||new Set(list.map(e=>String(e.id))).size!==list.length))throw new Error('Identificadores inválidos: '+key);}
   return value;
 }

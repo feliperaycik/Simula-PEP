@@ -1,15 +1,22 @@
 /* Proteção dos formulários e identificação do paciente. */
-const changedForms=new Set();let currentSubmitForm=null;
-function dirtyForms(){return [...changedForms].filter(f=>f.isConnected);}
-window.markCurrentFormSaved=()=>{if(currentSubmitForm)changedForms.delete(currentSubmitForm);};
-window.discardFormChanges=(form)=>{if(!changedForms.has(form))return true;if(!confirm('Há alterações não salvas. Deseja descartá-las?'))return false;changedForms.delete(form);return true;};
-document.addEventListener('input',e=>{if(e.target.form)changedForms.add(e.target.form);},true);
-document.addEventListener('change',e=>{if(e.target.form)changedForms.add(e.target.form);},true);
+const changedForms=new Set(),accountEditedForms=new WeakSet(),formBaselines=new WeakMap();let currentSubmitForm=null;
+function formSnapshot(form){return JSON.stringify([...form.elements].filter(field=>field.name&&!field.disabled&&field.type!=='search'&&field.type!=='hidden').map(field=>[field.name,field.type,field.type==='checkbox'||field.type==='radio'?field.checked:field.value]));}
+function trackableForm(form){return form&&!form.matches('#reportSearchForm,#adminContextForm,#semesterSelectionForm,#calendarPeriodForm,#fullHistoryPrintForm');}
+function dirtyForms(){return [...changedForms].filter(form=>form.isConnected&&trackableForm(form)&&formBaselines.has(form)&&formSnapshot(form)!==formBaselines.get(form));}
+window.confirmDiscardChanges=()=>{if(!dirtyForms().length)return true;if(!confirm('Há alterações não salvas. Deseja sair e descartá-las?'))return false;changedForms.clear();return true;};
+window.markFormSaved=form=>{if(!form)return;formBaselines.set(form,formSnapshot(form));changedForms.delete(form);};
+window.currentSubmittedForm=()=>currentSubmitForm;
+window.markCurrentFormSaved=()=>window.markFormSaved(currentSubmitForm);
+window.discardFormChanges=form=>{if(!form||!dirtyForms().includes(form))return true;if(!confirm('Há alterações não salvas. Deseja descartá-las?'))return false;window.markFormSaved(form);return true;};
+function recordFormChange(event){const field=event.target;if(!event.isTrusted||!field.matches?.('input,select,textarea')||!field.name||field.type==='search'||field.type==='hidden')return;const form=field.form;if(!trackableForm(form))return;if(form.id==='firebaseAccountForm'&&!accountEditedForms.has(form))return;if(!formBaselines.has(form)){formBaselines.set(form,formSnapshot(form));return;}changedForms.add(form);}
+document.addEventListener('beforeinput',event=>{const field=event.target,form=field.form;if(!event.isTrusted||form?.id!=='firebaseAccountForm'||!field.matches?.('input,textarea')||!field.name)return;if(!accountEditedForms.has(form)){formBaselines.set(form,formSnapshot(form));accountEditedForms.add(form);changedForms.delete(form);}},true);
+document.addEventListener('input',recordFormChange,true);
+document.addEventListener('change',recordFormChange,true);
 document.addEventListener('submit',e=>{currentSubmitForm=e.target;setTimeout(()=>{currentSubmitForm=null;},0);},true);
 window.addEventListener('beforeunload',e=>{if(dirtyForms().length){e.preventDefault();e.returnValue='';}});
 document.addEventListener('click',e=>{
   const link=e.target.closest('a[href]'),button=e.target.closest('button');
-  const leaves=link&&!link.getAttribute('href').startsWith('#')||button&&/location\.href|togglePatients|toggleRecords/.test(button.getAttribute('onclick')||'');
+  const leaves=link&&!link.getAttribute('href').startsWith('#')||button&&/location\.href|togglePatients/.test(button.getAttribute('onclick')||'');
   if(leaves&&dirtyForms().length){if(!confirm('Há alterações não salvas. Deseja sair e descartá-las?')){e.preventDefault();e.stopImmediatePropagation();}else changedForms.clear();}
 },true);
 const originalCloseModal=window.closeModal;
@@ -23,6 +30,7 @@ function enhanceForms(){
   for(const form of document.querySelectorAll('form:not([data-enhanced])')){
     form.dataset.enhanced='1';
     for(const input of form.querySelectorAll('input[name="profissional"],input[name="aluno"]')){input.required=true;input.placeholder='Aluno';if(form.id!=='editClinicalRecord'&&['Aluno','Aluno(a) PEP'].includes(input.value)){input.value='';input.defaultValue='';}}
+    formBaselines.set(form,formSnapshot(form));
   }
   const panel=document.querySelector('.attendance-panel');
   if(panel&&!document.querySelector('#attendanceIdentity')){const banner=document.createElement('div');banner.id='attendanceIdentity';banner.className='patient-context';banner.setAttribute('aria-live','polite');panel.before(banner);updateAttendancePatient();}
