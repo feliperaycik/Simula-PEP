@@ -1,6 +1,7 @@
 /* Registro de atendimento e triagem com sinais vitais. */
 const qs = new URLSearchParams(location.search);
 const selected = qs.get('id') || '';
+const linkedAppointmentId = qs.get('agendamento') || '';
 
 function opts() {
   return '<option value="">Selecione um paciente</option>'+load('pacientes').map(patient => `<option value="${patient.id}" ${patient.id == selected ? 'selected' : ''}>${safe(patient.nome)} · Nº ${patientNumber(patient)}</option>`).join('');
@@ -20,11 +21,62 @@ function attendanceContent(tab) {
   return tab === 'triagem' ? triage() : newAttendance();
 }
 
-function atPage() {
-  shell(`${patientSearchMarkup('triage')}<section class="attendance-panel" id="triagem">${triage()}</section>`, 'Triagem');
-  bindPatientSearch('triage');
-  document.querySelectorAll('.record').forEach(form => form.onsubmit = record);
+function triagePatientInitials(name) {
+  return String(name || '').trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toLocaleUpperCase('pt-BR');
 }
+
+function renderTriagePatients() {
+  const list = document.querySelector('#triagePatientList');
+  if (!list) return;
+  const term = document.querySelector('#patientLookup').value.trim();
+  const patients = load('pacientes').filter(patient => matchesPatient(patient, term));
+  const selectedId = document.querySelector('#triagem [name="pacienteId"]').value;
+  document.querySelector('#triagePatientSummary').textContent = `${term ? 'Resultados da busca' : 'Todos os pacientes'} · ${patients.length} ${patients.length === 1 ? 'paciente' : 'pacientes'}`;
+  list.innerHTML = `<div class="patient-grid" role="list">${patients.map(patient => {
+    const chosen = String(patient.id) === selectedId;
+    return `<article class="patient-card ${chosen ? 'triage-patient-selected' : ''}" role="listitem"><button class="patient-card-main triage-patient-choice" type="button" data-triage-patient="${safe(patient.id)}" aria-label="Selecionar ${safe(patient.nome)} para triagem" aria-pressed="${chosen}"><span class="patient-card-avatar" aria-hidden="true">${safe(triagePatientInitials(patient.nome))}</span><span class="patient-card-name">${safe(patient.nome)}</span><span class="patient-card-id">Prontuário ${safe(patientNumber(patient))}</span></button><dl class="patient-card-data"><div><dt>Nascimento</dt><dd>${fmt(patient.nascimento)}</dd></div><div><dt>Idade</dt><dd>${age(patient.nascimento)} anos</dd></div><div><dt>Sexo</dt><dd>${safe(patient.sexo || 'Não informado')}</dd></div></dl><div class="patient-card-actions"><button type="button" data-triage-patient="${safe(patient.id)}">${chosen ? 'Paciente selecionado' : 'Iniciar triagem'}</button></div></article>`;
+  }).join('') || `<div class="patient-directory-empty"><strong>${term ? 'Nenhum paciente encontrado.' : 'Nenhum paciente cadastrado.'}</strong><span>${term ? 'Altere a busca para encontrar outro cadastro.' : 'Cadastre um paciente na aba Pacientes para iniciar a triagem.'}</span></div>`}</div>`;
+}
+
+function selectTriagePatient(id, focusForm = true) {
+  const patient = load('pacientes').find(item => String(item.id) === String(id));
+  if (!patient) return;
+  const form = document.querySelector('#triagem form');
+  form.elements.pacienteId.value = String(patient.id);
+  const display = document.querySelector('#selectedPatientName');
+  display.value = `${patient.nome} · Nº ${patientNumber(patient)}`;
+  display.setCustomValidity('');
+  form.elements.pacienteId.dispatchEvent(new Event('change', { bubbles: true }));
+  renderTriagePatients();
+  if (focusForm) {
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.elements.queixa.focus({ preventScroll: true });
+  }
+}
+
+function atPage() {
+  shell(`<section class="patient-directory triage-directory" aria-label="Pacientes para triagem"><div class="patient-directory-actions"><div class="patient-directory-search">${pepIcon('search')}<input id="patientLookup" type="search" aria-label="Buscar paciente" placeholder="Buscar por nome, CPF ou prontuário" autocomplete="off"></div></div><p id="triagePatientSummary" class="patient-filter-summary" aria-live="polite"></p><div id="triagePatientList"></div></section><section class="attendance-panel" id="triagem">${triage()}</section>`, 'Triagem');
+  document.querySelector('#patientLookup').oninput = renderTriagePatients;
+  document.querySelector('#triagePatientList').onclick = event => {
+    const choice = event.target.closest('[data-triage-patient]');
+    if (choice) selectTriagePatient(choice.dataset.triagePatient);
+  };
+  document.querySelectorAll('.record').forEach(form => form.onsubmit = record);
+  renderTriagePatients();
+  window.PEPFirebaseReady?.then(async firebase => {
+    await firebase.sessionReady;
+    await firebase.hydrationReady;
+    if (!document.querySelector('#triagePatientList')) return;
+    if (selected && !document.querySelector('#triagem [name="pacienteId"]').value) selectTriagePatient(selected, false);
+    renderTriagePatients();
+  }).catch(error => console.warn('Não foi possível atualizar a lista de pacientes da triagem.', error));
+}
+
+window.addEventListener('pep-stores-hydrated', () => {
+  if (!document.querySelector('#triagePatientList')) return;
+  if (selected && !document.querySelector('#triagem [name="pacienteId"]').value) selectTriagePatient(selected, false);
+  renderTriagePatients();
+});
 
 function record(event) {
   event.preventDefault();
@@ -39,18 +91,22 @@ function record(event) {
   }
   data.registradoEm = new Date().toISOString();
   data.id = DB.id();
+  if (form.dataset.store === 'triagens' && linkedAppointmentId) data.atendimentoId = linkedAppointmentId;
   data.data = data.data || localDate();
   data.hora = data.hora || new Date().toTimeString().slice(0, 5);
   const entries = load(form.dataset.store);
   entries.push(data);
   save(form.dataset.store, entries);
-  save('atendimentos',load('atendimentos').map(a=>a.pacienteId==data.pacienteId&&a.data===localDate()&&['Aguardando','Triagem'].includes(a.status)?{...a,status:'Triagem'}:a));
+  if (form.dataset.store === 'triagens' && linkedAppointmentId) {
+    save('atendimentos',load('atendimentos').map(a=>String(a.id)===String(linkedAppointmentId)?{...a,status:'Triagem'}:a));
+  }
   note(form.dataset.event);
   toast(`${form.dataset.event} com sucesso!`);
   form.reset();
   form.elements.pacienteId.value='';
   document.querySelector('#selectedPatientName').value='';
   window.updateAttendancePatient?.();
+  renderTriagePatients();
 }
 
 document.addEventListener('input', event => {

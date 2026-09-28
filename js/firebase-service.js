@@ -11,14 +11,16 @@
     appId: '1:272624538209:web:615b718793ec8fe7555020',
     measurementId: 'G-C7ZEEBDFMJ'
   };
-  const adminEmail = 'simulapep@gmail.com';
-  const storeNames = ['pacientes','atendimentos','triagens','sinais_vitais','evolucoes','anotacoes_enfermagem','solicitacoes_exames','procedimentos','diagnosticos','planos','prescricoes','prescricoes_cuidados','receitas','avaliacoes','auditoria','notificacoes','chamados'];
+  // Apenas estas coleções possuem um caminho remoto e regras de acesso no Firestore.
+  // Notificações, chamados e preferências continuam sendo dados locais da sessão.
+  const storeNames = ['pacientes','atendimentos','triagens','sinais_vitais','evolucoes','anotacoes_enfermagem','solicitacoes_exames','procedimentos','diagnosticos','planos','prescricoes','prescricoes_cuidados','receitas','avaliacoes','auditoria'];
   const ready = window.PEPFirebaseReady || new Promise(resolve => { window.__resolvePEPFirebase = resolve; });
   window.PEPFirebaseReady = ready;
 
-  const api = { enabled: false, ready, profile: null, user: null, sessionReady: null };
+  const api = { enabled: false, ready, profile: null, user: null, sessionReady: null, hydrationReady: Promise.resolve() };
+  api.canSyncStore=store=>storeNames.includes(store);
   window.PEPFirebase = api;
-  let app, auth, db, sdk = {}, sessionResolve;
+  let app, auth, db, sdk = {}, sessionResolve, profileUnsubscribe, profileWatchUid;
   api.sessionReady = new Promise(resolve => { sessionResolve = resolve; });
   if (window.PEPPreviewLocalOnly === true || localStorage.getItem('pep_preview_local') === '1') {
     api.previewLocalOnly = true;
@@ -29,6 +31,7 @@
 
   const roleOf = profile => String(profile?.perfil || profile?.role || '').toLocaleLowerCase('pt-BR');
   const unitKeyOf = unit => encodeURIComponent(String(unit || 'Unidade acadêmica').trim() || 'Unidade acadêmica');
+  const classKeyOf = classroom => encodeURIComponent(String(classroom || 'Turma acadêmica').trim() || 'Turma acadêmica');
   api.isStaff = profile => ['docente','administrador'].includes(roleOf(profile || api.profile));
   api.isAdmin = profile => roleOf(profile || api.profile) === 'administrador';
   const localUser = (user, profile) => {
@@ -36,11 +39,15 @@
     localStorage.setItem('pep_current_email', user.email || profile.email || '');
     localStorage.setItem('pep_current_user', profile.nome || user.displayName || user.email?.split('@')[0] || 'Usuário');
     localStorage.setItem('pep_current_role', profile.perfil || profile.role || 'Aluno');
-    localStorage.setItem('pep_current_unit', profile.unidade || profile.unidadeEnsino || 'Unidade acadêmica');
-    localStorage.setItem('pep_current_unit_key', profile.unidadeChave || unitKeyOf(profile.unidade || profile.unidadeEnsino));
+    const selectedUnit = roleOf(profile)==='administrador' ? localStorage.getItem('pep_admin_unit') : '';
+    const unit = selectedUnit || profile.unidade || profile.unidadeEnsino || 'Unidade acadêmica';
+    localStorage.setItem('pep_current_unit', unit);
+    localStorage.setItem('pep_current_unit_key', unitKeyOf(unit));
+    localStorage.setItem('pep_current_turma', profile.turma || 'Turma acadêmica');
+    localStorage.setItem('pep_current_turma_key', profile.turmaChave || classKeyOf(profile.turma));
     localStorage.setItem('pep_current_profile_semester', profile.semestre || '');
   };
-  const clearLocalUser = () => ['pep_logged','pep_current_email','pep_current_user','pep_current_role','pep_current_unit','pep_current_unit_key','pep_current_profile_semester','pep_selected_semester'].forEach(key => localStorage.removeItem(key));
+  const clearLocalUser = () => ['pep_logged','pep_current_email','pep_current_user','pep_current_role','pep_current_unit','pep_current_unit_key','pep_current_turma','pep_current_turma_key','pep_current_profile_semester','pep_selected_semester','pep_admin_unit'].forEach(key => localStorage.removeItem(key));
   const currentPageIsPrivate = () => Boolean(document.body?.dataset?.page);
   const notifySession = detail => window.dispatchEvent(new CustomEvent('pep-firebase-session', { detail }));
 
@@ -49,26 +56,61 @@
     return snapshot.exists() ? { uid: snapshot.id, ...snapshot.data() } : null;
   }
   async function hydrateStores() {
-    if (!api.profile || sessionStorage.getItem(`pep_firebase_hydrated_${api.user.uid}`)) return;
+    if (!api.profile) return;
+    const unitKey=localStorage.getItem('pep_current_unit_key') || unitKeyOf(api.profile?.unidade);
+    const classKey=localStorage.getItem('pep_current_turma_key') || classKeyOf(api.profile?.turma);
+    const hydrationKey=`pep_firebase_hydrated_${api.user.uid}_${unitKey}_${api.isAdmin()?'all':classKey}`;
+    const classes=api.isAdmin() ? await api.listClasses(localStorage.getItem('pep_current_unit')) : [{chave:classKey}];
+    // Alguns pacientes anteriores ao cadastro de turmas foram gravados na
+    // turma-padrão sem acento. O administrador ainda precisa vê-los.
+    const classKeys=[...new Set([...classes.map(item=>item.chave||item.id),classKey,...(api.isAdmin()?[classKeyOf('turma academica')]:[])].filter(Boolean))];
     let downloaded = false;
-    for (const store of storeNames) {
-      const ref = sdk.collection(db, 'workspaces', 'academic', 'units', localStorage.getItem('pep_current_unit_key') || unitKeyOf(api.profile?.unidade), 'stores', store, 'items');
-      const remote = await sdk.getDocs(ref);
-      const values = remote.docs.map(item => item.data().payload).filter(Boolean);
-      const local = JSON.parse(localStorage.getItem(`pep_${store}`) || '[]');
+    for (const store of sessionStorage.getItem(hydrationKey)?['pacientes']:storeNames) {
+      const values=[];
+      for(const currentClass of classKeys){
+        const ref=sdk.collection(db,'workspaces','academic','units',unitKey,'classes',currentClass,'stores',store,'items');
+        const remote=store==='avaliacoes'&&!api.isStaff()
+          ? await sdk.getDocs(sdk.query(ref,sdk.where('payload.alunoUid','==',api.user.uid)))
+          : await sdk.getDocs(ref);
+        values.push(...remote.docs.map(item=>item.data().payload).filter(Boolean));
+      }
+      let local = JSON.parse(localStorage.getItem(`pep_${store}`) || '[]');
+      // Recupera somente cadastros legados criados pelo próprio usuário antes
+      // de o contexto acadêmico ser gravado no paciente. Não inferimos o
+      // contexto de registros de terceiros.
+      if(store==='pacientes'){
+        const currentUnit=localStorage.getItem('pep_current_unit')||api.profile?.unidade||'Unidade acadêmica';
+        const currentClass=localStorage.getItem('pep_current_turma')||api.profile?.turma||'Turma acadêmica';
+        const ownedLegacy=local.map(item=>{
+          const missingWorkspace=!String(item?.unidade||'').trim()&&!String(item?.turma||'').trim();
+          return missingWorkspace&&String(item?.registradoPor?.email||'').toLowerCase()===String(api.user?.email||'').toLowerCase()
+            ? {...item,unidade:currentUnit,turma:currentClass}:item;
+        });
+        if(JSON.stringify(local)!==JSON.stringify(ownedLegacy)){
+          local=ownedLegacy;localStorage.setItem(`pep_${store}`,JSON.stringify(local));
+        }
+      }
+      const sameWorkspace=item=>unitKeyOf(item.unidade)===unitKey&&classKeys.includes(classKeyOf(item.turma))&&(store!=='avaliacoes'||api.isStaff()||String(item.alunoUid)===String(api.user.uid));
       if (values.length) {
-        localStorage.setItem(`pep_${store}`, JSON.stringify(values));
-        downloaded = true;
-      } else if (local.length) {
-        await api.syncStore(store, local);
+        const otherContexts=local.filter(item=>!sameWorkspace(item));
+        const pendingIds=store==='pacientes'?new Set(JSON.parse(localStorage.getItem('pep_pending_patient_ids')||'[]')):new Set();
+        const pendingLocal=local.filter(item=>sameWorkspace(item)&&pendingIds.has(String(item.id)));
+        const pendingMap=new Map(pendingLocal.map(item=>[String(item.id),item]));
+        const merged=[...otherContexts,...values.map(item=>pendingMap.get(String(item.id))||item),...pendingLocal.filter(item=>!values.some(remote=>String(remote.id)===String(item.id)))];
+        if(JSON.stringify(local)!==JSON.stringify(merged)){localStorage.setItem(`pep_${store}`, JSON.stringify(merged));downloaded=true;}
+        if(pendingLocal.length){try{await api.syncStore('pacientes',pendingLocal);pendingLocal.forEach(item=>pendingIds.delete(String(item.id)));localStorage.setItem('pep_pending_patient_ids',JSON.stringify([...pendingIds]))}catch(error){console.warn('Pacientes locais ainda aguardam sincronização.',error)}}
+      } else if (local.length && (api.isStaff()||store==='pacientes')) {
+        const currentValues=local.filter(sameWorkspace);
+        await api.syncStore(store, currentValues);
       }
     }
-    sessionStorage.setItem(`pep_firebase_hydrated_${api.user.uid}`, '1');
-    if (downloaded && currentPageIsPrivate()) location.reload();
+    sessionStorage.setItem(hydrationKey,'1');
+    if (downloaded && currentPageIsPrivate()) window.dispatchEvent(new Event('pep-stores-hydrated'));
   }
   async function synchronizeSession(user) {
     api.user = user || null;
     if (!user) {
+      profileUnsubscribe?.(); profileUnsubscribe=null; profileWatchUid='';
       api.profile = null; clearLocalUser(); sessionResolve?.({ user: null, profile: null }); notifySession({ user: null, profile: null });
       if (currentPageIsPrivate()) location.replace('index.html');
       return;
@@ -79,7 +121,19 @@
       return;
     }
     api.profile = profile; localUser(user, profile); renderSettings(); sessionResolve?.({ user, profile }); notifySession({ user, profile });
-    hydrateStores().catch(error => console.warn('Não foi possível sincronizar os dados locais com o Firebase.', error));
+    if(profileWatchUid!==user.uid){
+      profileUnsubscribe?.();profileWatchUid=user.uid;
+      profileUnsubscribe=sdk.onSnapshot(sdk.doc(db,'users',user.uid),snapshot=>{
+        if(!snapshot.exists()||!api.profile)return;
+        const updated={uid:snapshot.id,...snapshot.data()};
+        const changed=['perfil','status','unidade','turma','semestre','nome'].some(key=>updated[key]!==api.profile[key]);
+        if(!changed)return;
+        if(updated.status==='Inativo'){sdk.signOut(auth);return;}
+        api.profile=updated;localUser(user,updated);notifySession({user,profile:updated});
+        if(currentPageIsPrivate())location.reload();
+      },error=>console.warn('Não foi possível acompanhar alterações do perfil.',error));
+    }
+    api.hydrationReady=hydrateStores().catch(error => console.warn('Não foi possível sincronizar os dados locais com o Firebase.', error));
   }
   async function requireStaff() {
     await api.sessionReady;
@@ -132,9 +186,9 @@
   api.listUsers = async () => {
     await requireStaff();
     const source = sdk.collection(db, 'users');
-    const query = api.isAdmin() ? sdk.query(source, sdk.orderBy('nome')) : sdk.query(source, sdk.where('unidadeChave', '==', localStorage.getItem('pep_current_unit_key') || unitKeyOf(api.profile?.unidade)), sdk.orderBy('nome'));
+    const query = api.isAdmin() ? source : sdk.query(source, sdk.where('unidadeChave', '==', unitKeyOf(api.profile?.unidade)));
     const snapshot = await sdk.getDocs(query);
-    return snapshot.docs.map(item => ({ uid: item.id, ...item.data() }));
+    return snapshot.docs.map(item => ({ uid: item.id, ...item.data() })).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'));
   };
   api.listUnits = async () => {
     await api.sessionReady;
@@ -145,54 +199,166 @@
     await requireAdmin();
     const normalized = String(name || '').trim();
     if (!normalized) throw new Error('Informe o nome da unidade de ensino.');
-    await sdk.setDoc(sdk.doc(db, 'units', unitKeyOf(normalized)), { nome:normalized, chave:unitKeyOf(normalized), updatedAt:sdk.serverTimestamp() }, { merge:true });
+    const ref=sdk.doc(db,'units',unitKeyOf(normalized));
+    if((await sdk.getDoc(ref)).exists())throw new Error('Esta unidade já está cadastrada.');
+    await sdk.setDoc(ref, { nome:normalized, chave:unitKeyOf(normalized), updatedAt:sdk.serverTimestamp() });
+  };
+  api.listClasses = async unit => {
+    await api.sessionReady;
+    const snapshot = await sdk.getDocs(sdk.query(sdk.collection(db, 'units', unitKeyOf(unit), 'classes'), sdk.orderBy('nome')));
+    return snapshot.docs.map(item => ({ id:item.id, ...item.data() }));
+  };
+  api.createClass = async (unit, classroom, semester) => {
+    await requireAdmin();
+    const unidade = String(unit || '').trim(), turma = String(classroom || '').trim(), periodo=String(semester||'').trim();
+    if (!unidade || !turma || !window.PEPAcademicContext?.semesters.includes(periodo)) throw new Error('Preencha unidade, turma e semestre.');
+    const ref=sdk.doc(db,'units',unitKeyOf(unidade),'classes',classKeyOf(turma));
+    if((await sdk.getDoc(ref)).exists())throw new Error('Esta turma já está cadastrada na unidade.');
+    await sdk.setDoc(ref,{nome:turma,chave:classKeyOf(turma),unidade,unidadeChave:unitKeyOf(unidade),semestre:periodo,updatedAt:sdk.serverTimestamp()});
+  };
+  const classHasRecords=async(unit,classroom)=>{
+    for(const store of storeNames){
+      const ref=sdk.collection(db,'workspaces','academic','units',unitKeyOf(unit),'classes',classKeyOf(classroom),'stores',store,'items');
+      if(!(await sdk.getDocs(sdk.query(ref,sdk.limit(1)))).empty)return true;
+    }
+    return false;
+  };
+  api.updateClass=async(unit,oldName,newName,semester)=>{
+    await requireAdmin();
+    const name=String(newName||'').trim();
+    if(!name||!window.PEPAcademicContext?.semesters.includes(semester))throw new Error('Preencha turma e semestre.');
+    const oldRef=sdk.doc(db,'units',unitKeyOf(unit),'classes',classKeyOf(oldName));
+    if(!(await sdk.getDoc(oldRef)).exists())throw new Error('Turma não encontrada.');
+    if(classKeyOf(oldName)!==classKeyOf(name)){
+      const users=await api.listUsers();
+      if(users.some(user=>user.unidadeChave===unitKeyOf(unit)&&user.turmaChave===classKeyOf(oldName))||await classHasRecords(unit,oldName))throw new Error('Esta turma já possui usuários ou registros. Altere apenas o semestre ou crie outra turma.');
+      const newRef=sdk.doc(db,'units',unitKeyOf(unit),'classes',classKeyOf(name));
+      if((await sdk.getDoc(newRef)).exists())throw new Error('Já existe uma turma com esse nome.');
+      const batch=sdk.writeBatch(db);batch.set(newRef,{nome:name,chave:classKeyOf(name),unidade:unit,unidadeChave:unitKeyOf(unit),semestre:semester,updatedAt:sdk.serverTimestamp()});batch.delete(oldRef);await batch.commit();
+    }else await sdk.updateDoc(oldRef,{semestre:semester,updatedAt:sdk.serverTimestamp()});
+  };
+  api.deleteClass=async(unit,name)=>{
+    await requireAdmin();
+    const users=await api.listUsers();
+    if(users.some(user=>user.unidadeChave===unitKeyOf(unit)&&user.turmaChave===classKeyOf(name))||await classHasRecords(unit,name))throw new Error('Esta turma possui usuários ou registros e não pode ser excluída.');
+    await sdk.deleteDoc(sdk.doc(db,'units',unitKeyOf(unit),'classes',classKeyOf(name)));
+  };
+  api.deleteUnit=async unit=>{
+    await requireAdmin();
+    if((await api.listClasses(unit)).length||(await api.listUsers()).some(user=>user.unidadeChave===unitKeyOf(unit)))throw new Error('Esta unidade possui turmas ou usuários. Remova os vínculos antes de excluí-la.');
+    await sdk.deleteDoc(sdk.doc(db,'units',unitKeyOf(unit)));
   };
   api.watchUsers = async callback => {
     await requireStaff();
     const source = sdk.collection(db, 'users');
-    const query = api.isAdmin() ? sdk.query(source, sdk.orderBy('nome')) : sdk.query(source, sdk.where('unidadeChave', '==', localStorage.getItem('pep_current_unit_key') || unitKeyOf(api.profile?.unidade)), sdk.orderBy('nome'));
-    return sdk.onSnapshot(query, snapshot => callback(snapshot.docs.map(item => ({ uid: item.id, ...item.data() }))));
+    const query = api.isAdmin() ? source : sdk.query(source, sdk.where('unidadeChave', '==', unitKeyOf(api.profile?.unidade)));
+    return sdk.onSnapshot(query, snapshot => callback(snapshot.docs.map(item => ({ uid: item.id, ...item.data() })).sort((a,b)=>String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'))));
   };
   const academicUserData = data => {
     const perfil = String(data.perfil || 'Aluno').trim() || 'Aluno';
     const unidade = String(data.unidade || '').trim();
-    const semestre = perfil === 'Aluno' ? String(data.semestre || '').trim() : '';
+    const turma = String(data.turma || '').trim();
+    const semestre = ['Aluno','Docente'].includes(perfil) ? String(data.semestre || '').trim() : '';
     if (!unidade) throw new Error('Selecione a unidade de ensino.');
-    if (perfil === 'Aluno' && !semestre) throw new Error('Selecione o semestre do aluno.');
-    return { perfil, unidade, semestre };
+    if (['Aluno','Docente'].includes(perfil) && !turma) throw new Error('Selecione a turma do usuário.');
+    if (['Aluno','Docente'].includes(perfil) && !window.PEPAcademicContext?.semesters.includes(semestre)) throw new Error('Selecione um semestre válido para o aluno ou docente.');
+    return { perfil, unidade, turma:turma || 'Turma acadêmica', semestre };
   };
   api.createUser = async data => {
-    await requireAdmin();
+    await requireStaff();
     const email = String(data.email || '').trim().toLowerCase();
     const password = String(data.password || '');
     const academic = academicUserData(data);
+    if(!api.isAdmin()){
+      if(academic.perfil!=='Aluno'||unitKeyOf(academic.unidade)!==unitKeyOf(api.profile?.unidade))throw new Error('Docentes só podem cadastrar alunos da própria unidade.');
+      const classes=await api.listClasses(academic.unidade);
+      if(!classes.some(item=>item.chave===classKeyOf(academic.turma)||item.nome===academic.turma))throw new Error('Selecione uma turma cadastrada na sua unidade.');
+    }
     if (!email || password.length < 6 || !data.nome) throw new Error('Nome, e-mail e uma senha de pelo menos 6 caracteres são obrigatórios.');
     const secondary = sdk.initializeApp(firebaseConfig, `provisionamento-${Date.now()}`);
     const secondaryAuth = sdk.getAuth(secondary);
     let credential;
-    try { credential = await sdk.createUserWithEmailAndPassword(secondaryAuth, email, password); }
+    try {
+      credential = await sdk.createUserWithEmailAndPassword(secondaryAuth, email, password);
+      await sdk.setDoc(sdk.doc(db, 'users', credential.user.uid), { nome: data.nome.trim(), email, perfil: academic.perfil, status: data.status || 'Ativo', curso: data.curso || 'Enfermagem', semestre: academic.semestre, unidade: academic.unidade, unidadeChave: unitKeyOf(academic.unidade), turma:academic.turma, turmaChave:classKeyOf(academic.turma), createdAt: sdk.serverTimestamp(), updatedAt: sdk.serverTimestamp() });
+    }
+    catch(error){if(credential?.user)await sdk.deleteUser(credential.user).catch(()=>undefined);throw error;}
     finally { await sdk.signOut(secondaryAuth).catch(() => undefined); await sdk.deleteApp(secondary); }
-    await sdk.setDoc(sdk.doc(db, 'users', credential.user.uid), { nome: data.nome.trim(), email, perfil: academic.perfil, status: data.status || 'Ativo', curso: data.curso || 'Enfermagem', semestre: academic.semestre, unidade: academic.unidade, unidadeChave: unitKeyOf(academic.unidade), createdAt: sdk.serverTimestamp(), updatedAt: sdk.serverTimestamp() });
   };
   api.updateUser = async (uid, data) => {
     await requireAdmin();
     const academic = academicUserData(data);
-    await sdk.updateDoc(sdk.doc(db, 'users', uid), { nome: data.nome.trim(), perfil: academic.perfil, status: data.status, curso: data.curso || '', semestre: academic.semestre, unidade: academic.unidade, unidadeChave: unitKeyOf(academic.unidade), updatedAt: sdk.serverTimestamp() });
+    if(uid===api.user?.uid&&(academic.perfil!=='Administrador'||data.status!=='Ativo'))throw new Error('Não é possível remover o próprio acesso de administrador.');
+    await sdk.updateDoc(sdk.doc(db, 'users', uid), { nome: data.nome.trim(), perfil: academic.perfil, status: data.status, curso: data.curso || '', semestre: academic.semestre, unidade: academic.unidade, unidadeChave: unitKeyOf(academic.unidade), turma:academic.turma, turmaChave:classKeyOf(academic.turma), updatedAt: sdk.serverTimestamp() });
+  };
+  api.setUserStatus = async (uid, status) => {
+    await requireAdmin();
+    if(!['Ativo','Inativo'].includes(status))throw new Error('Status inválido.');
+    if(uid===api.user?.uid&&status==='Inativo')throw new Error('Não é possível desativar o próprio acesso de administrador.');
+    await sdk.updateDoc(sdk.doc(db,'users',uid),{status,updatedAt:sdk.serverTimestamp()});
   };
   api.saveSupportTicket = async data => {
     await api.sessionReady;
     if (!api.user) throw new Error('Entre no sistema para enviar um chamado.');
     await sdk.addDoc(sdk.collection(db, 'supportTickets'), { ownerUid: api.user.uid, nome: data.nome.trim(), email: data.email.trim().toLowerCase(), assunto: data.assunto.trim(), mensagem: data.mensagem.trim(), destinatario: 'simulapep@gmail.com', status: 'Novo', createdAt: sdk.serverTimestamp() });
   };
-  api.syncStore = async (store, values) => {
-    if (!api.enabled || !api.profile || !storeNames.includes(store)) return;
-    const ref = sdk.collection(db, 'workspaces', 'academic', 'units', localStorage.getItem('pep_current_unit_key') || unitKeyOf(api.profile?.unidade), 'stores', store, 'items');
-    const existing = await sdk.getDocs(ref);
+  api.saveAppointment = async (data, previous = null) => {
+    if(!api.enabled)return false;
+    await api.sessionReady;
+    if(!api.profile)throw new Error('Sessão expirada. Entre novamente.');
+    if(!api.isStaff()&&String(data.aluno||'').trim()!==String(api.profile.nome||'').trim())throw new Error('O agendamento deve usar o nome do aluno autenticado.');
+    window.PEPAppointmentSlot?.validate(data,[],data.id);
+    const unit=String(data.unidade||localStorage.getItem('pep_current_unit')||'').trim();
+    const classroom=String(data.turma||localStorage.getItem('pep_current_turma')||'').trim();
+    if(!unit||!classroom)throw new Error('Selecione a unidade e a turma do agendamento.');
+    const unitKey=unitKeyOf(unit),classKey=classKeyOf(classroom);
+    if(!api.isAdmin()&&unitKey!==unitKeyOf(api.profile?.unidade))throw new Error('Esta unidade não pertence ao seu acesso.');
+    if(!api.isAdmin()&&classKey!==classKeyOf(api.profile?.turma))throw new Error('Esta turma não pertence ao seu acesso.');
+    // Alunos não podem consultar atendimentos de outras turmas. A reserva
+    // atômica em slots já impede colisões de horário em toda a unidade.
+    const classNames=api.isStaff()?await api.listClasses(unit):[];
+    const classKeys=[...new Set([...classNames.map(item=>item.chave||item.id),classKey,previous?.turma?classKeyOf(previous.turma):''].filter(Boolean))];
+    if(data.status!=='Cancelado'){
+      for(const key of classKeys){
+        const ref=sdk.collection(db,'workspaces','academic','units',unitKey,'classes',key,'stores','atendimentos','items');
+        const snapshot=await sdk.getDocs(ref);
+        if(snapshot.docs.some(doc=>{const item=doc.data().payload;return item&&String(item.id)!==String(data.id)&&item.status!=='Cancelado'&&item.data===data.data&&item.hora===data.hora;}))throw new Error('Este horário já está ocupado.');
+      }
+    }
+    const appointmentRef=sdk.doc(db,'workspaces','academic','units',unitKey,'classes',classKey,'stores','atendimentos','items',String(data.id));
+    const slotRef=(date,time)=>sdk.doc(db,'workspaces','academic','units',unitKey,'slots',`${date}_${time.replace(':','')}`);
+    const targetSlot=data.status==='Cancelado'?null:slotRef(data.data,data.hora);
+    const oldSlot=previous&&previous.status!=='Cancelado'?slotRef(previous.data,previous.hora):null;
+    const previousRef=previous?.turma&&classKeyOf(previous.turma)!==classKey
+      ?sdk.doc(db,'workspaces','academic','units',unitKey,'classes',classKeyOf(previous.turma),'stores','atendimentos','items',String(data.id)):null;
+    await sdk.runTransaction(db,async transaction=>{
+      const target=targetSlot?await transaction.get(targetSlot):null;
+      const old=oldSlot&&(!targetSlot||oldSlot.path!==targetSlot.path)?await transaction.get(oldSlot):null;
+      if(target?.exists()&&String(target.data().appointmentId)!==String(data.id))throw new Error('Este horário já está ocupado.');
+      if(old?.exists()&&String(old.data().appointmentId)===String(data.id))transaction.delete(oldSlot);
+      if(targetSlot)transaction.set(targetSlot,{appointmentId:String(data.id),turmaChave:classKey,data:data.data,hora:data.hora,updatedAt:sdk.serverTimestamp()});
+      transaction.set(appointmentRef,{payload:data,updatedAt:sdk.serverTimestamp()},{merge:true});
+      if(previousRef)transaction.delete(previousRef);
+    });
+    return true;
+  };
+  api.syncStore = async (store, values, removedIds = []) => {
+    if (!api.enabled || !storeNames.includes(store)) return;
+    if (!api.profile) throw new Error('Sessão expirada. Entre novamente para salvar os dados.');
+    const unitKey=localStorage.getItem('pep_current_unit_key') || unitKeyOf(api.profile?.unidade);
+    const classKey=item=>api.isAdmin()&&item?.turma?classKeyOf(item.turma):(localStorage.getItem('pep_current_turma_key')||classKeyOf(api.profile?.turma));
+    const ref=item=>sdk.collection(db,'workspaces','academic','units',unitKey,'classes',classKey(item),'stores',store,'items');
     const incoming = new Map((values || []).filter(item => item?.id != null).map(item => [String(item.id), item]));
-    const batch = sdk.writeBatch(db);
-    existing.docs.forEach(item => { if (!incoming.has(item.id)) batch.delete(item.ref); });
-    incoming.forEach((payload, id) => batch.set(sdk.doc(ref, id), { payload, updatedAt: sdk.serverTimestamp() }));
-    await batch.commit();
+    const operations=[];
+    // Nunca excluir a coleção inteira a partir de uma cópia local: outro usuário
+    // pode ter salvo um registro que ainda não foi hidratado neste navegador.
+    incoming.forEach((payload, id) => operations.push(['set',sdk.doc(ref(payload), id),payload]));
+    removedIds.forEach(entry=>{const item=typeof entry==='object'?entry:{id:entry};operations.push(['delete',sdk.doc(ref(item),String(item.id))]);});
+    for(let index=0;index<operations.length;index+=400){
+      const batch=sdk.writeBatch(db);
+      operations.slice(index,index+400).forEach(([kind,target,payload])=>kind==='set'?batch.set(target,{payload,updatedAt:sdk.serverTimestamp()},{merge:true}):batch.delete(target));
+      await batch.commit();
+    }
   };
 
   (async () => {

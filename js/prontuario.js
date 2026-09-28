@@ -58,12 +58,12 @@ function nursingNotes() {
 }
 
 function carePlan() {
-  return simpleForm('planos', 'Plano de cuidados criado', [['diagnostico', 'Diagnóstico relacionado'], ['objetivo', 'Objetivo', 'textarea'], ['intervencao', 'Intervenção', 'textarea'], ['frequencia', 'Frequência'], ['resultado', 'Resultado esperado', 'textarea'], ['status', 'Status', 'select'], ['prazo', 'Prazo']]) + '<h3>Planos registrados</h3>' + list('planos', [['diagnostico', 'Diagnóstico'], ['objetivo', 'Objetivo'], ['status', 'Status']], { showProfessional: true });
+  return simpleForm('planos', 'Plano de cuidados criado', [['diagnostico', 'Diagnóstico relacionado', 'text', true], ['objetivo', 'Objetivo', 'textarea', true], ['intervencao', 'Intervenção', 'textarea', true], ['frequencia', 'Frequência'], ['resultado', 'Resultado esperado', 'textarea'], ['status', 'Status', 'select'], ['prazo', 'Prazo']]) + '<h3>Planos registrados</h3>' + list('planos', [['diagnostico', 'Diagnóstico'], ['objetivo', 'Objetivo'], ['status', 'Status']], { showProfessional: true });
 }
 
 const medicationFields = {
   prescription: [['medicamento', 'Medicação*', 'text', true], ['dose', 'Dosagem', 'text'], ['apresentacao', 'Apresentação', 'text'], ['via', 'Via de administração', 'text'], ['horario', 'Horário', 'time']],
-  recipe: [['medicamento', 'Medicamento e concentração*', 'text', true], ['posologia', 'Posologia*', 'text', true], ['quantidade', 'Quantidade*', 'text', true]]
+  recipe: [['medicamento', 'Medicamento e concentração*', 'text', true], ['posologia', 'Posologia*', 'text', true], ['quantidade', 'Quantidade*', 'text', true], ['horario', 'Horário', 'time']]
 };
 function medicationRow(kind, values = {}, index = 0) {
   return `<fieldset class="medication-row" data-medication-row><legend>Medicamento ${index + 1}</legend><div class="medication-row-actions"><button type="button" class="outline medication-remove" data-remove-medication aria-label="Remover medicamento ${index + 1}" title="Remover medicamento">×</button></div><div class="form-grid medication-grid">${medicationFields[kind].map(([name, label, type, required]) => `<label class="field">${label}<input data-medication-field="${name}" type="${type}" value="${esc(values[name] || '')}" ${required ? 'required' : ''}></label>`).join('')}</div></fieldset>`;
@@ -71,17 +71,17 @@ function medicationRow(kind, values = {}, index = 0) {
 function medicationEntries(entry, kind) {
   if (Array.isArray(entry?.medicamentosItens) && entry.medicamentosItens.length) return entry.medicamentosItens;
   if (!entry) return [{}];
-  if (kind === 'recipe') return [{ medicamento:entry.medicamentos || '', posologia:entry.posologia || '', quantidade:entry.quantidade || '' }];
+  if (kind === 'recipe') return [{ medicamento:entry.medicamentos || '', posologia:entry.posologia || '', quantidade:entry.quantidade || '', horario:entry.horario || '' }];
   return [{ medicamento:entry.medicamento || '', dose:entry.dose || '', apresentacao:entry.apresentacao || '', via:entry.via || '', horario:entry.horario || '' }];
 }
 function medicationForm(kind, entry = null, editing = false) {
   const isRecipe = kind === 'recipe';
   const rows = medicationEntries(entry, kind);
-  const professional = entry?.profissional || 'Profissional Fictício';
+  const professional = entry?.profissional || (isRecipe ? '' : 'Profissional Fictício');
   const crm = entry?.crm || 'CRM 000000-XX';
   const heading = isRecipe ? 'Receituário' : 'Prescrição';
   const action = isRecipe ? 'Salvar receita' : 'Salvar prescrição';
-  return `<form class="form-card medication-form ${isRecipe ? 'recipe-form' : 'medical-prescription-form'}" data-medication-form="${kind}" data-edit-id="${entry?.id || ''}"><div class="prescription-form-head"><div><span>${isRecipe ? 'Receituário médico' : 'Prescrição médica'}</span><h2>${heading}</h2></div>${!isRecipe ? '<p>Medicamentos organizados em linhas independentes.</p>' : ''}</div><div class="form-grid prescription-professional-grid"><label class="field">Profissional<input name="profissional" value="${esc(professional)}" readonly></label><label class="field">Cargo<input name="cargo" value="Médico" readonly></label><label class="field">CRM<input name="crm" value="${esc(crm)}" readonly></label>${isRecipe ? `<label class="field patient-field">Paciente<input value="${esc(pp.nome)}" readonly></label><label class="field">Nascimento<input value="${esc(fmt(pp.nascimento))}" readonly></label>` : ''}</div><div class="medication-list" data-medication-list>${rows.map((item, index) => medicationRow(kind, item, index)).join('')}</div><button type="button" class="outline add-medication" data-add-medication>＋ Adicionar medicamento</button>${isRecipe ? '<label class="field recipe-observation">Observação<textarea name="obs" rows="2" placeholder="Escreva uma observação, se necessário.">'+esc(entry?.obs || '')+'</textarea></label>' : ''}<div class="actions"><button type="submit">${editing ? 'Salvar alterações' : action}</button>${editing ? '<button type="button" class="secondary" onclick="closeModal()">Cancelar</button>' : printControls(isRecipe ? 'receituario' : 'prescricoes')}</div></form>`;
+  return `<form class="form-card medication-form ${isRecipe ? 'recipe-form' : 'medical-prescription-form'}" data-medication-form="${kind}" data-edit-id="${entry?.id || ''}" ${isRecipe?'novalidate':''}><div class="prescription-form-head"><div><span>${isRecipe ? 'Receituário médico' : 'Prescrição médica'}</span><h2>${heading}</h2></div>${!isRecipe ? '<p>Medicamentos organizados em linhas independentes.</p>' : ''}</div><div class="form-grid prescription-professional-grid"><label class="field">Profissional<input name="profissional" value="${esc(professional)}" ${isRecipe ? 'required placeholder="Digite o nome do profissional"' : 'readonly'}></label><label class="field">Cargo<input name="cargo" value="Médico" readonly></label><label class="field">CRM<input name="crm" value="${esc(crm)}" readonly></label>${isRecipe ? `<label class="field patient-field">Paciente<input value="${esc(pp.nome)}" readonly></label><label class="field">Nascimento<input value="${esc(fmt(pp.nascimento))}" readonly></label>` : ''}</div><div class="medication-list" data-medication-list>${rows.map((item, index) => medicationRow(kind, item, index)).join('')}</div><button type="button" class="outline add-medication" data-add-medication>＋ Adicionar medicamento</button>${isRecipe ? '<label class="field recipe-observation">Observação<textarea name="obs" rows="2" placeholder="Escreva uma observação, se necessário.">'+esc(entry?.obs || '')+'</textarea></label>' : ''}<div class="actions"><button type="submit">${editing ? 'Salvar alterações' : action}</button>${editing ? '<button type="button" class="secondary" onclick="closeModal()">Cancelar</button>' : printControls(isRecipe ? 'receituario' : 'prescricoes')}</div></form>`;
 }
 function medicationList(key, kind) {
   const entries = records(key).slice().sort((a, b) => recordTime(b).localeCompare(recordTime(a)));
@@ -101,8 +101,18 @@ function historySummary(entry) {
 
 function historyView() {
   const entries = allHistory();
-  return `<div class="history-toolbar no-print"><div><h2>Registro completo do paciente</h2><p class="muted">Todos os registros disponíveis do prontuário reunidos em ordem cronológica.</p></div><button type="button" class="outline" onclick="openPrintSelection('all')">Selecionar para imprimir</button></div><div class="timeline">${entries.map(entry => `<article class="event"><div class="event-time">${fmt(entry.data)} às ${esc(entry.hora || '')}</div><b>${esc(entry.title)}</b><div class="event-professional">${pepIcon('person')} ${esc(professionalName(entry))}</div>${historySummary(entry)}<div class="actions no-print"><button class="outline" onclick="previewClinicalPrint('${entry.key}',[${entry.id}])">Imprimir registro</button></div></article>`).join('') || '<p class="muted">O histórico será composto automaticamente conforme os registros forem criados.</p>'}</div>${correctionHistory(pid)}`;
+  return `<div class="history-toolbar no-print"><div><h2>Registro completo do paciente</h2><p class="muted">Todos os registros disponíveis do prontuário reunidos em ordem cronológica.</p></div><button type="button" class="outline" onclick="openFullHistoryPrint()">Selecionar período para imprimir</button></div><div class="timeline">${entries.map(entry => `<article class="event"><div class="event-time">${fmt(entry.data)} às ${esc(entry.hora || '')}</div><b>${esc(entry.title)}</b><div class="event-professional">${pepIcon('person')} ${esc(professionalName(entry))}</div>${historySummary(entry)}</article>`).join('') || '<p class="muted">O histórico será composto automaticamente conforme os registros forem criados.</p>'}</div>${correctionHistory(pid)}`;
 }
+window.openFullHistoryPrint=()=>{
+  modal(`<section class="print-selection"><h2>Selecionar período para impressão</h2><p>Informe um dia nas duas datas ou escolha um período.</p><form id="fullHistoryPrintForm"><div class="form-grid"><label class="field">Data inicial<input name="start" type="date" required></label><label class="field">Data final<input name="end" type="date" required></label></div><div class="error" id="fullHistoryPrintError" role="alert"></div><div class="actions"><button>Visualizar impressão</button><button type="button" class="secondary" onclick="closeModal()">Cancelar</button></div></form></section>`,true);
+  document.querySelector('#fullHistoryPrintForm').onsubmit=event=>{
+    event.preventDefault();const form=event.currentTarget,start=form.elements.start.value,end=form.elements.end.value,error=document.querySelector('#fullHistoryPrintError');
+    if(start>end){error.textContent='A data final deve ser igual ou posterior à inicial.';return}
+    const entries=allHistory().filter(item=>item.data>=start&&item.data<=end).reverse();
+    if(!entries.length){error.textContent='Nenhum registro encontrado neste período.';return}
+    showClinicalPrint('all',entries);
+  };
+};
 
 function printableHistory() {
   const entries = allHistory().slice().reverse();
@@ -110,7 +120,7 @@ function printableHistory() {
 }
 
 function content(tab) {
-  if(tab==='ficha-completa')return `<section class="card"><div class="actions"><h2>Ficha completa</h2><button class="outline icon-button" type="button" onclick="showFullPatient(pp)" title="Imprimir ficha completa" aria-label="Imprimir ficha completa">${pepIcon('print')}</button></div>${fullPatientMarkup(pp)}</section><section class="card" style="margin-top:14px">${historyView()}</section>`;
+  if(tab==='ficha-completa')return `<section class="card"><h2>Ficha completa</h2>${fullPatientMarkup(pp)}</section><section class="card" style="margin-top:14px">${historyView()}</section>`;
   if (tab === 'resumo') return `<div class="grid cards"><div class="card">Tipo sanguíneo<div class="metric">${esc(pp.sangue || '—')}</div></div><div class="card allergy-card">Alergias: <span>${esc(pp.alergias || 'Não informado')}</span></div><div class="card">Idade<div class="metric">${age(pp.nascimento)}</div></div></div><h2>Dados do paciente</h2><div class="card"><b>${esc(pp.nome)}</b><p>Identificação: ${esc(patientNumber(pp))} · Nascimento: ${fmt(pp.nascimento)} · Sexo: ${esc(pp.sexo)}</p></div>`;
   if (tab === 'triagens') return '<div class="form-intro"><b>Registros de triagem</b><span>Este histórico reúne somente as triagens realizadas para este paciente.</span></div>'+list('triagens', [['queixa', 'Queixa'], ['sintomas', 'Sintomas'], ['dor', 'Dor'], ['peso', 'Peso'], ['altura', 'Altura'], ['imc', 'IMC'], ['pa', 'PA', ' mmHg'], ['temp', 'T', ' °C'], ['fr', 'FR', ' irpm'], ['fc', 'FC', ' bpm'], ['sat', 'Saturação', ' %'], ['spo2', 'Saturação', ' %'], ['glicemia', 'Glicemia', ' mg/dL'], ['aluno', 'Responsável'], ['profissional', 'Profissional'], ['obs', 'Observações']]);
   if (tab === 'sinais-vitais') return vitalSigns();
@@ -165,10 +175,13 @@ function bindMedicationForm(form, kind, editedEntry = null) {
     const remove = event.target.closest('[data-remove-medication]');
     if (remove && !remove.disabled) { remove.closest('[data-medication-row]').remove(); refreshMedicationRows(form); }
   });
-  form.onsubmit = event => {
+  form.onsubmit = async event => {
     event.preventDefault();
+    if(kind==='recipe'&&!form.elements.profissional.value.trim()){
+      toast('Preencha o profissional do receituário.','error');form.elements.profissional.focus();return;
+    }
     const medications = [...form.querySelectorAll('[data-medication-row]')].map(row => Object.fromEntries(medicationFields[kind].map(([name]) => [name, row.querySelector(`[data-medication-field="${name}"]`).value.trim()])));
-    if (!medications.length || medications.some(item => medicationFields[kind].some(([name,, , required]) => required && !item[name]))) { toast('Preencha os campos obrigatórios de cada medicamento.', 'error'); return; }
+    if (!medications.length || medications.some(item => medicationFields[kind].some(([name,, , required]) => required && !item[name]))) { toast(kind==='recipe'?'Preencha o receituário: medicamento, posologia e quantidade são obrigatórios.':'Preencha os campos obrigatórios de cada medicamento.', 'error');form.querySelector('[data-medication-field]:invalid, [data-medication-field]')?.focus();return; }
     const data = Object.fromEntries(new FormData(form));
     const first = medications[0];
     const entry = { ...data, ...first, medicamentosItens:medications };
@@ -178,14 +191,14 @@ function bindMedicationForm(form, kind, editedEntry = null) {
       entry.quantidade = medications.map(item => item.quantidade).join('\n');
     }
     if (editedEntry) {
-      saveEditedRecord(kind === 'recipe' ? 'receitas' : 'prescricoes', editedEntry.id, entry);
-      closeModal(); prPage(); toast('Registro atualizado com sucesso!'); return;
+      const synced=await saveEditedRecord(kind === 'recipe' ? 'receitas' : 'prescricoes', editedEntry.id, entry);
+      closeModal(); prPage(); toast(synced?'Registro atualizado com sucesso!':'Registro salvo neste navegador; sincronização pendente.',synced?'success':'warn'); return;
     }
     const timestamp = nowParts();
     entry.id = DB.id(); entry.pacienteId = pid; entry.data = timestamp.data; entry.hora = timestamp.hora; entry.registradoEm = timestamp.registradoEm;
     const key = kind === 'recipe' ? 'receitas' : 'prescricoes';
-    const items = load(key); items.push(entry); save(key, items); note(kind === 'recipe' ? 'Receita registrada' : 'Prescrição registrada');
-    toast(kind === 'recipe' ? 'Receita registrada com sucesso!' : 'Prescrição registrada com sucesso!'); prPage();
+    const items = load(key); items.push(entry); const synced=await save(key, items); note(kind === 'recipe' ? 'Receita registrada' : 'Prescrição registrada');
+    toast(synced?(kind === 'recipe' ? 'Receita registrada com sucesso!' : 'Prescrição registrada com sucesso!'):'Registro salvo neste navegador; sincronização pendente.',synced?'success':'warn'); prPage();
   };
 }
 
@@ -266,10 +279,10 @@ function saveEditedRecord(key,id,changes){
   const items=load(key);const index=items.findIndex(item=>item.id==id&&item.pacienteId==pid);
   if(index<0)throw new Error('Registro não encontrado.');
   const original=items[index];items[index]={...original,...changes,id:original.id,pacienteId:original.pacienteId,registradoEm:original.registradoEm};
-  save(key,items);note('Registro atualizado.');
+  const result=save(key,items);note('Registro atualizado.');return result;
 }
 
-window.removeRecord = (key, id) => { if (confirm('Excluir este registro?')) { save(key, load(key).filter(entry => entry.id != id)); toast('Registro excluído.', 'warn'); prPage(); } };
+window.removeRecord = async (key, id) => { if (!confirm('Excluir este registro?')) return; try { const records=load(key),removed=records.find(entry=>entry.id==id);if(!removed)throw new Error('Registro não encontrado.');const synced=await save(key,records.filter(entry => entry.id != id),{removedIds:[{id:removed.id,turma:removed.turma}]}); prPage(); toast(synced?'Registro excluído com sucesso.':'Registro excluído neste navegador; sincronização pendente.',synced?'success':'warn'); } catch(error) { toast('Não foi possível excluir o registro.','error'); } };
 window.printHistory = () => modal(printableHistory(), true);
 window.receipt = () => openPrintSelection('receituario');
 window.gerarPrescricao = window.receipt;

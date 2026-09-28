@@ -6,17 +6,17 @@ document.head.append(loginStyle);
 
 const themeStyle = document.createElement('link');
 themeStyle.rel = 'stylesheet';
-themeStyle.href = 'css/theme.css?v=16-20260910';
+themeStyle.href = 'css/theme.css?v=20260926a';
 document.head.append(themeStyle);
 
 window.PEPFirebaseReady = window.PEPFirebaseReady || new Promise(resolve => { window.__resolvePEPFirebase = resolve; });
 const firebaseService = document.createElement('script');
-firebaseService.src = 'js/firebase-service.js?v=16-20260910';
+firebaseService.src = 'js/firebase-service.js?v=20260926a';
 firebaseService.defer = true;
 document.head.append(firebaseService);
 
 const accessibilityScript = document.createElement('script');
-accessibilityScript.src = 'js/accessibility.js?v=19-20260917';
+accessibilityScript.src = 'js/accessibility.js?v=20260926a';
 accessibilityScript.defer = true;
 document.head.append(accessibilityScript);
 if (localStorage.getItem('pep_dark') === '1') document.body.classList.add('dark');
@@ -38,6 +38,8 @@ function enableLocalLogin() {
       localStorage.setItem('pep_current_role', account?.perfil || 'Aluno');
       localStorage.setItem('pep_current_unit', account?.unidade || 'Unidade acadêmica');
       localStorage.setItem('pep_current_unit_key', encodeURIComponent(account?.unidade || 'Unidade acadêmica'));
+      localStorage.setItem('pep_current_turma', account?.turma || 'Turma acadêmica');
+      localStorage.setItem('pep_current_turma_key', encodeURIComponent(account?.turma || 'Turma acadêmica'));
       localStorage.setItem('pep_current_profile_semester', account?.semestre || '');
       localStorage.removeItem('pep_selected_semester');
       localStorage.setItem('pep_logged', 'true');
@@ -52,7 +54,8 @@ function enableLocalLogin() {
 (async () => {
   const firebase = await window.PEPFirebaseReady;
   if (!firebase.enabled) {
-    enableLocalLogin();
+    if (window.PEPPreviewLocalOnly === true || localStorage.getItem('pep_preview_local') === '1') enableLocalLogin();
+    else showError('Não foi possível iniciar o acesso seguro. Verifique a conexão com o Firebase e tente novamente.');
     return;
   }
 

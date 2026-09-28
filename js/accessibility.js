@@ -23,7 +23,6 @@
   function apply() {
     const scale = getScale();
     root.style.setProperty('--a11y-scale', String(scale));
-    document.body?.classList.remove('high-contrast');
     document.body?.classList.toggle('a11y-scaled', scale !== 1);
     root.classList.remove('invert-colors');
     syncControls();
@@ -74,7 +73,7 @@
   function reset() {
     const librasEnabled = isOn(keys.libras);
     Object.values(keys).forEach(key => localStorage.removeItem(key));
-    localStorage.removeItem('pep_high_contrast'); localStorage.removeItem('pep_invert_colors');
+    localStorage.removeItem('pep_invert_colors');
     if (librasEnabled) disableLibras();
     if (supportsSpeech()) speechSynthesis.cancel();
     apply(); announce('Preferências de acessibilidade restauradas.');
@@ -103,7 +102,8 @@
     const panel = document.querySelector('#accessibilityPanel');
     if (!panel) return;
     const open = !panel.classList.contains('show');
-    panel.classList.toggle('show', open); trigger?.setAttribute('aria-expanded', String(open));
+    panel.classList.toggle('show', open);
+    document.querySelectorAll('[aria-controls="accessibilityPanel"]').forEach(button=>button.setAttribute('aria-expanded',String(open&&button===trigger)));
     if (open) panel.querySelector('button')?.focus();
   }
   function closePanel() {
@@ -113,27 +113,28 @@
     document.querySelectorAll('[aria-controls="accessibilityPanel"]').forEach(trigger => trigger.setAttribute('aria-expanded', 'false'));
   }
   function ensurePanel() {
-    let panel = document.querySelector('#accessibilityPanel');
+    const panels=[...document.querySelectorAll('#accessibilityPanel')];
+    let panel = panels.find(item=>item.parentElement===document.body)||panels[0];
+    panels.filter(item=>item!==panel).forEach(item=>item.remove());
     if (!panel) {
-      panel = document.createElement('section'); panel.id = 'accessibilityPanel'; panel.className = 'accessibility-panel a11y-floating-panel'; document.body.append(panel);
+      panel = document.createElement('section'); panel.id = 'accessibilityPanel'; panel.className = 'accessibility-panel';
+    }
+    panel.classList.add('a11y-floating-panel');
+    if(panel.parentElement!==document.body)document.body.append(panel);
+    const inPortal=Boolean(document.querySelector('.app'));
+    document.querySelector('.account-menu button[onclick*="toggleAccessibility"]')?.remove();
+    let trigger=document.querySelector('#a11yFloatingTrigger');
+    if(inPortal){trigger?.remove();}
+    else if(!trigger){
       const trigger = document.createElement('button');
       trigger.type = 'button'; trigger.id = 'a11yFloatingTrigger'; trigger.className = 'a11y-floating-trigger'; trigger.setAttribute('aria-label', 'Abrir opções de acessibilidade'); trigger.setAttribute('aria-controls', panel.id); trigger.setAttribute('aria-expanded', 'false'); trigger.textContent = 'Acessibilidade'; document.body.append(trigger);
       trigger.addEventListener('click', () => togglePanel(trigger));
     }
+    document.querySelectorAll('button[onclick*="toggleAccessibility"]').forEach(button=>{button.setAttribute('aria-controls','accessibilityPanel');if(!button.hasAttribute('aria-expanded'))button.setAttribute('aria-expanded','false');});
     bindPanel(panel); syncControls();
   }
   function ensureEvaluationMenu() {
-    const role = String(localStorage.getItem('pep_current_role') || '').toLocaleLowerCase('pt-BR');
-    if (!['docente', 'administrador'].includes(role)) return;
-    if (document.body?.dataset?.page === 'dashboard') return;
-    const menu = document.querySelector('#accountMenu');
-    const settings = menu?.querySelector('a[href="configuracoes.html"]');
-    if (!settings || menu.querySelector('[data-assessment-menu]')) return;
-    const link = document.createElement('a');
-    link.href = 'avaliacoes.html'; link.dataset.assessmentMenu = '1';
-    link.setAttribute('aria-label', 'Abrir avaliações de alunos');
-    link.innerHTML = 'Avaliação';
-    settings.insertAdjacentElement('afterend', link);
+    // A avaliação é oferecida na barra inferior e na navegação principal.
   }
   function standardizeNavigationArrows() {
     document.querySelectorAll('.chevron,.menu-arrow,.faq button span').forEach(arrow => {
