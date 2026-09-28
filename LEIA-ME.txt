@@ -1,16 +1,12 @@
-PEP Senac — Prévia completa v16 (10/09/2026)
+PEP Senac — Ambiente acadêmico com Firebase
 
 1. Extraia o ZIP inteiro.
 2. Abra a pasta PEP-Senac-Preview-Completa.
 3. Execute INICIAR-PEP.bat e mantenha a janela aberta durante o uso.
-4. Acesse http://localhost:8765/ no navegador.
+4. Acesse http://localhost:8765/ no navegador com conexão à internet.
 
-Acesso demonstrativo inicial: aluno@pep.com / 123456.
-Se você alterou a senha em Configurações, use a nova senha.
-
-Esta entrega mantém o modo de prévia local do ZIP fornecido. Os cadastros
-e as alterações são armazenados no navegador. Nenhuma publicação foi feita.
-Os arquivos de integração Firebase foram preservados, sem ativação remota.
+O acesso é autenticado pelo Firebase. Use uma conta criada pela administração.
+Em caso de primeira configuração, consulte FIREBASE-SETUP.md.
 
 O número de prontuário aproveita o identificador persistente do paciente,
 com no mínimo seis dígitos (ex.: 000001). Cadastros existentes mantêm os
